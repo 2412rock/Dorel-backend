@@ -24,7 +24,7 @@ namespace DorelAppBackend.Controllers
         {
             var resonse = new ReponseModel()
             {
-                Name = "Adriano",
+                Name = "Update value",
                 Number = "23"
             };
             return Ok(resonse);
