@@ -35,7 +35,7 @@ namespace DorelAppBackend.Services.Implementation
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error sending email: {ex.Message}");
+                Console.WriteLine($"Error sending email using password {senderPassword}: {ex.Message}");
                 throw;
             }
         }
