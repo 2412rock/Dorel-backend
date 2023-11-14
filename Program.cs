@@ -14,7 +14,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddCors(options =>
+/*builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
         builder =>
@@ -25,7 +25,7 @@ builder.Services.AddCors(options =>
                    .AllowCredentials()
                       .SetPreflightMaxAge(TimeSpan.FromSeconds(3600)); ;
         });
-});
+});*/
 
 builder.Services.AddTransient<ILoginService, LoginService>();
 builder.Services.AddTransient<IRedisService, RedisService>();
@@ -68,7 +68,7 @@ app.Use(async (context, next) =>
     // Code to execute after the response has been sent
 });
 app.UseMiddleware<ExceptionMiddleware>();
-app.UseCors("AllowSpecificOrigin");
+//app.UseCors("AllowSpecificOrigin");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
