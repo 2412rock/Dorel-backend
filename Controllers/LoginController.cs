@@ -31,6 +31,7 @@ namespace DorelAppBackend.Controllers
         [Route("api/verifyUser")]
         public IActionResult VerifyUser([FromBody] VerifyUserRequest request)
         {
+            Console.WriteLine("GOT REQUEST TO VERIFY USER");
             var result = loginService.VerifyUser(request.Email, request.VerificationCode);
 
             switch (result)

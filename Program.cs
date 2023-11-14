@@ -55,7 +55,18 @@ builder.Services.AddDbContext<LoginDbContext>(options =>
 
 
 var app = builder.Build();
+app.Use(async (context, next) =>
+{
+    // Code to execute before sending the response
 
+    // Append custom headers to the response
+    context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+
+    // Call the next middleware in the pipeline
+    await next();
+
+    // Code to execute after the response has been sent
+});
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors("AllowSpecificOrigin");
 // Configure the HTTP request pipeline.
