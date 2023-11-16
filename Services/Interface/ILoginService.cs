@@ -8,6 +8,8 @@ namespace DorelAppBackend.Services.Interface
 
         public LoginEnum LoginUser(string email, string password);
 
+        public void LoginGoogle(string email, string name);
+
         public VerifyUserEnum VerifyUser(string email, string verificationCode);
     }
 }

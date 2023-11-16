@@ -21,6 +21,14 @@ namespace DorelAppBackend.Controllers
         }
 
         [HttpPost]
+        [Route("api/loginGoogle")]
+        public IActionResult LoginGoogle(LoginGoogleRequest request)
+        {
+            loginService.LoginGoogle(request.Email, request.Name);
+            return Ok(new LoginResponse() { Message = "ok"});
+        }
+
+        [HttpPost]
         [Route("api/login")]
         public IActionResult Login([FromBody] LoginRequest request)
         {
@@ -28,11 +36,11 @@ namespace DorelAppBackend.Controllers
             switch (response)
             {
                 case LoginEnum.LoginSuccess:
-                    return Ok("Login success");
+                    return Ok(new LoginResponse() { Message = "Login success" });
                 case LoginEnum.UserDoesNotExist:
-                    return BadRequest("User does not exist");
+                    return BadRequest(new LoginResponse() { Message = "User does not exist" });
                 case LoginEnum.InvalidPassword:
-                    return BadRequest("Invalid password");
+                    return BadRequest(new LoginResponse() { Message = "Invalid password" });
             }
 
             return NotFound();

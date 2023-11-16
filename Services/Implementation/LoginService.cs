@@ -1,4 +1,5 @@
-﻿using DorelAppBackend.Enums;
+﻿using Azure;
+using DorelAppBackend.Enums;
 using DorelAppBackend.Models;
 using DorelAppBackend.Models.DbModels;
 using DorelAppBackend.Services.Interface;
@@ -22,6 +23,17 @@ namespace DorelAppBackend.Services.Implementation
             _mailService = mailService;
             _passwordHashService = passwordHashService;
             this.loginDbContext = loginDbContext;
+        }
+
+
+        public void LoginGoogle(string email, string name)
+        {
+            var userExists = loginDbContext.Users.Any(e => e.Email == email);
+            if (!userExists)
+            {
+                loginDbContext.Users.Add(new UserLoginInfoModel() { Email = email, Password = "", Name = name});
+                loginDbContext.SaveChanges();
+            }
         }
 
         public LoginEnum LoginUser(string email, string password)
