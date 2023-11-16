@@ -11,13 +11,11 @@ COPY . ./
 
 RUN dotnet publish -c Release -o out
 
-RUN dotnet dev-certs https
-RUN dotnet dev-certs https --trust
-
 # Use a smaller runtime image for the final image
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS runtime
+
 WORKDIR /app
-COPY backendcertificate.pfx /usr/share/certs/backendcertificate.pfx
+COPY backendcertificate.pfx /app/backendcertificate.pfx
 # Copy the built application from the build image
 COPY --from=build /app/out ./
 

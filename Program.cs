@@ -9,19 +9,25 @@ using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
 
-try
-{
-    // Running locally
-    SetupKestrel("C:/Users/Adi/Desktop/certs/backendcertificate.pfx");
-}
 
-catch
+builder.WebHost.UseKestrel(options =>
 {
-    // Running in docker
-    Console.WriteLine("Running in docker, this is the current directory " + Directory.GetCurrentDirectory());
-    SetupKestrel("/usr/share/certs/backendcertificate.pfx");
-}
-
+    options.Listen(IPAddress.Any, 4500);
+    options.Listen(IPAddress.Any, 4200, listenOptions =>
+    {
+        try
+        {
+            // docker
+            listenOptions.UseHttps("/app/backendcertificate.pfx", Environment.GetEnvironmentVariable("PFX_PASS"));
+        }
+        catch
+        {
+            // local
+            listenOptions.UseHttps("C:/Users/Adi/Desktop/certs/backendcertificate.pfx", Environment.GetEnvironmentVariable("PFX_PASS"));
+        }
+        
+    });
+});
 
 
 
@@ -89,16 +95,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-
-void SetupKestrel(string certificatePath)
-{
-    builder.WebHost.UseKestrel(options =>
-    {
-        options.Listen(IPAddress.Any, 4500);
-        options.Listen(IPAddress.Loopback, 4200, listenOptions =>
-        {
-            listenOptions.UseHttps(certificatePath, Environment.GetEnvironmentVariable("PFX_PASS"));
-        });
-    });
-}
