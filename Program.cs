@@ -18,6 +18,7 @@ try
 catch
 {
     // Running in docker
+    Console.WriteLine("Running in docker, this is the current directory " + Directory.GetCurrentDirectory());
     SetupKestrel("/usr/share/certs/backendcertificate.pfx");
 }
 
