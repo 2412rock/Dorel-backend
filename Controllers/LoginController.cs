@@ -19,6 +19,25 @@ namespace DorelAppBackend.Controllers
         {
             this.loginService = loginService;
         }
+
+        [HttpPost]
+        [Route("api/login")]
+        public IActionResult Login([FromBody] LoginRequest request)
+        {
+            var response = loginService.LoginUser(request.Email, request.Password);
+            switch (response)
+            {
+                case LoginEnum.LoginSuccess:
+                    return Ok("Login success");
+                case LoginEnum.UserDoesNotExist:
+                    return BadRequest("User does not exist");
+                case LoginEnum.InvalidPassword:
+                    return BadRequest("Invalid password");
+            }
+
+            return NotFound();
+        }
+
         [HttpPost]
         [Route("api/sendVerification")]
         public IActionResult RegisterPreVertified([FromBody] RegisterUserRequest request)

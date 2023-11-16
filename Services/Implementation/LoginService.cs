@@ -12,18 +12,39 @@ namespace DorelAppBackend.Services.Implementation
         private LoginDbContext loginDbContext;
         private readonly IRedisCacheService _redisCacheService;
         private readonly IMailService _mailService;
+        private readonly IPasswordHashService _passwordHashService;
         public LoginService(LoginDbContext loginDbContext,
             IRedisCacheService redisCacheService,
-            IMailService mailService)
+            IMailService mailService,
+            IPasswordHashService passwordHashService)
         {
             _redisCacheService = redisCacheService;
             _mailService = mailService;
+            _passwordHashService = passwordHashService;
             this.loginDbContext = loginDbContext;
         }
 
-        public bool LoginUser(string username, string password)
+        public LoginEnum LoginUser(string email, string password)
         {
-            throw new NotImplementedException();
+            LoginEnum response;
+            var user = loginDbContext.Users.Where(e => e.Email == email).FirstOrDefault();
+            if(user != null)
+            {
+                var hashPassword = user.Password;
+                if( _passwordHashService.VerifyPassword(password, hashPassword)){
+                    response = LoginEnum.LoginSuccess;
+                }
+                else
+                {
+                    response = LoginEnum.InvalidPassword;
+                }
+            }
+            else
+            {
+                response = LoginEnum.UserDoesNotExist;
+            }
+
+            return response;
         }
 
         public VerifyUserEnum VerifyUser(string email, string verificationCode)
@@ -71,7 +92,7 @@ namespace DorelAppBackend.Services.Implementation
                 var data = new UserVerification()
                 {
                     Name = name,
-                    Password = password,
+                    Password = _passwordHashService.HashPassword(password),
                     VerificationCode = verificationCode
                 };
 

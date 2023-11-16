@@ -5,8 +5,25 @@ using DorelAppBackend.Services.Implementation;
 using DorelAppBackend.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
+
+try
+{
+    // Running locally
+    SetupKestrel("C:/Users/Adi/Desktop/certs/backendcertificate.pfx");
+}
+
+catch
+{
+    // Running in docker
+    SetupKestrel("/usr/share/certs/backendcertificate.pfx");
+}
+
+
+
+
 
 // Add services to the container.
 
@@ -14,23 +31,22 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-/*builder.Services.AddCors(options =>
+builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
         builder =>
         {
             builder.AllowAnyOrigin()
                    .AllowAnyHeader()
-                   .AllowAnyMethod()
-                   .AllowCredentials()
-                      .SetPreflightMaxAge(TimeSpan.FromSeconds(3600)); ;
+                   .AllowAnyMethod();
         });
-});*/
+});
 
 builder.Services.AddTransient<ILoginService, LoginService>();
 builder.Services.AddTransient<IRedisService, RedisService>();
 builder.Services.AddTransient<IRedisCacheService, RedisCacheService>();
 builder.Services.AddTransient<IMailService, MailService>();
+builder.Services.AddTransient<IPasswordHashService, PasswordHashService>();
 
 // Add configuration
 builder.Configuration.AddJsonFile("appsettings.json", optional: false);
@@ -55,20 +71,9 @@ builder.Services.AddDbContext<LoginDbContext>(options =>
 
 
 var app = builder.Build();
-app.Use(async (context, next) =>
-{
-    // Code to execute before sending the response
 
-    // Append custom headers to the response
-    context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
-
-    // Call the next middleware in the pipeline
-    await next();
-
-    // Code to execute after the response has been sent
-});
 app.UseMiddleware<ExceptionMiddleware>();
-//app.UseCors("AllowSpecificOrigin");
+app.UseCors("AllowSpecificOrigin");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -82,4 +87,17 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run("http://0.0.0.0:4200");
+app.Run();
+
+
+void SetupKestrel(string certificatePath)
+{
+    builder.WebHost.UseKestrel(options =>
+    {
+        options.Listen(IPAddress.Any, 4500);
+        options.Listen(IPAddress.Loopback, 4200, listenOptions =>
+        {
+            listenOptions.UseHttps(certificatePath, Environment.GetEnvironmentVariable("PFX_PASS"));
+        });
+    });
+}

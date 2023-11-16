@@ -6,7 +6,7 @@ namespace DorelAppBackend.Services.Interface
     {
         public void SendVerification(string email, string password, string name);
 
-        public bool LoginUser(string email, string password);
+        public LoginEnum LoginUser(string email, string password);
 
         public VerifyUserEnum VerifyUser(string email, string verificationCode);
     }
