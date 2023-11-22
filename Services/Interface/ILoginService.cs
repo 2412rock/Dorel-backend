@@ -1,4 +1,5 @@
 ﻿using DorelAppBackend.Enums;
+using DorelAppBackend.Models.Responses;
 
 namespace DorelAppBackend.Services.Interface
 {
@@ -6,10 +7,10 @@ namespace DorelAppBackend.Services.Interface
     {
         public void SendVerification(string email, string password, string name);
 
-        public LoginEnum LoginUser(string email, string password);
+        public Maybe<string[]> LoginUser(string email, string password);
 
-        public void LoginGoogle(string email, string name);
+        public Maybe<string[]> LoginGoogle(string email, string name, string idToken);
 
-        public VerifyUserEnum VerifyUser(string email, string verificationCode);
+        public Maybe<string> VerifyUser(string email, string verificationCode);
     }
 }

@@ -2,8 +2,15 @@
 using DorelAppBackend.Enums;
 using DorelAppBackend.Models;
 using DorelAppBackend.Models.DbModels;
+using DorelAppBackend.Models.Responses;
 using DorelAppBackend.Services.Interface;
+using Google.Apis.Auth;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 
 namespace DorelAppBackend.Services.Implementation
@@ -25,49 +32,111 @@ namespace DorelAppBackend.Services.Implementation
             this.loginDbContext = loginDbContext;
         }
 
-
-        public void LoginGoogle(string email, string name)
+        public string GenerateJwtToken(string userEmail, bool isRefreshToken=false)
         {
-            var userExists = loginDbContext.Users.Any(e => e.Email == email);
-            if (!userExists)
+            //var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET");
+            string inputString = "ThisIsASecretKey1!@@";
+            byte[] bytes = Encoding.UTF8.GetBytes(inputString);
+            string base64String = Convert.ToBase64String(bytes);
+            var securityKey = new SymmetricSecurityKey(Convert.FromBase64String(base64String));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+            var issuer = "dorelapp.xyz";
+            var audience = "endpoint";
+            var claims = !isRefreshToken ? new[]
             {
-                loginDbContext.Users.Add(new UserLoginInfoModel() { Email = email, Password = "", Name = name});
-                loginDbContext.SaveChanges();
-            }
+                new Claim(JwtRegisteredClaimNames.Sub, userEmail), // User identifier from Google
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique JWT ID
+                new Claim(JwtRegisteredClaimNames.Iss, issuer), // Token issuer
+                new Claim(JwtRegisteredClaimNames.Aud, audience), // Token audience
+            } : new[] 
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, "RefreshTokenSubject"),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: issuer,
+                audience: audience,
+                claims: claims,
+                expires: isRefreshToken ? DateTime.UtcNow.AddHours(24) : DateTime.UtcNow.AddMinutes(30),
+                signingCredentials: credentials
+            );
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            return tokenHandler.WriteToken(token);
         }
 
-        public LoginEnum LoginUser(string email, string password)
+
+        public Maybe<string[]> LoginGoogle(string email, string name, string idToken)
         {
-            LoginEnum response;
+            var response = new Maybe<string[]>();
+            var userExists = loginDbContext.Users.Any(e => e.Email == email);
+            if (VerifyGoogleToken(idToken))
+            {
+                if (!userExists)
+                {
+                    loginDbContext.Users.Add(new UserLoginInfoModel() { Email = email, Password = "", Name = name });
+                    loginDbContext.SaveChanges();
+                }
+                response.SetSuccess(new string[] {GenerateJwtToken(email, true), GenerateJwtToken(email) });
+            }
+            else
+            {
+                response.SetException("Invalid google token");
+            }
+            return response;
+        }
+
+        private bool VerifyGoogleToken(string idToken)
+        {
+            try
+            {
+                var payload = GoogleJsonWebSignature.ValidateAsync(idToken, new GoogleJsonWebSignature.ValidationSettings()).Result;
+                if(payload != null)
+                {
+                    return true;
+                }
+            }
+            catch (InvalidJwtException ex)
+            {
+                Console.WriteLine("Invalid google token");
+            }
+            return false;
+        }
+
+        public Maybe<string[]> LoginUser(string email, string password)
+        {
+            var response = new Maybe<string[]>();
             var user = loginDbContext.Users.Where(e => e.Email == email).FirstOrDefault();
             if(user != null)
             {
                 var hashPassword = user.Password;
                 if( _passwordHashService.VerifyPassword(password, hashPassword)){
-                    response = LoginEnum.LoginSuccess;
+                    response.SetSuccess(new string[] { GenerateJwtToken(email, true), GenerateJwtToken(email) });
                 }
                 else
                 {
-                    response = LoginEnum.InvalidPassword;
+                    response.SetException("Invalid user password");
                 }
             }
             else
             {
-                response = LoginEnum.UserDoesNotExist;
+                response.SetException("User does not exist");
             }
 
             return response;
         }
 
-        public VerifyUserEnum VerifyUser(string email, string verificationCode)
+        public Maybe<string> VerifyUser(string email, string verificationCode)
         {
+            var result = new Maybe<string>();
             var redisValue = _redisCacheService.GetValueFromCache(email);
 
-            if(redisValue != null)
+            if (redisValue != null)
             {
                 var verificationObject = JsonSerializer.Deserialize<UserVerification>(redisValue);
 
-                if(verificationObject.VerificationCode == verificationCode)
+                if (verificationObject.VerificationCode == verificationCode)
                 {
                     var userExists = loginDbContext.Users.Any(e => e.Email == email);
 
@@ -75,20 +144,28 @@ namespace DorelAppBackend.Services.Implementation
                     {
                         loginDbContext.Users.Add(new UserLoginInfoModel() { Email = email, Password = verificationObject.Password, Name = verificationObject.Name });
                         loginDbContext.SaveChanges();
-                        _redisCacheService.RemoveValueFromCache(email);
 
-                        return VerifyUserEnum.VerificationSuccesful;
+                        result.SetSuccess("Verification ok");
+                    }
+                    else
+                    {
+                        result.SetException("User already exists");
                     }
 
                     _redisCacheService.RemoveValueFromCache(email);
 
-                    return VerifyUserEnum.UserAlreadyRegistered;
                 }
-
-                return VerifyUserEnum.VerificationCodeInvalid;
+                else
+                {
+                    result.SetException("Code invalid");
+                }
+            }
+            else
+            {
+                result.SetException("Email does not exist");
             }
 
-            return VerifyUserEnum.EmailDoesNotExist;
+            return result;
         }
 
         public void SendVerification(string email, string password, string name)

@@ -24,8 +24,8 @@ namespace DorelAppBackend.Controllers
         [Route("api/loginGoogle")]
         public IActionResult LoginGoogle(LoginGoogleRequest request)
         {
-            loginService.LoginGoogle(request.Email, request.Name);
-            return Ok(new LoginResponse() { Message = "ok"});
+            var result = loginService.LoginGoogle(request.Email, request.Name, request.IdToken);
+            return Ok(result);
         }
 
         [HttpPost]
@@ -33,17 +33,7 @@ namespace DorelAppBackend.Controllers
         public IActionResult Login([FromBody] LoginRequest request)
         {
             var response = loginService.LoginUser(request.Email, request.Password);
-            switch (response)
-            {
-                case LoginEnum.LoginSuccess:
-                    return Ok(new LoginResponse() { Message = "Login success" });
-                case LoginEnum.UserDoesNotExist:
-                    return BadRequest(new LoginResponse() { Message = "User does not exist" });
-                case LoginEnum.InvalidPassword:
-                    return BadRequest(new LoginResponse() { Message = "Invalid password" });
-            }
-
-            return NotFound();
+            return Ok(response);
         }
 
         [HttpPost]
@@ -61,22 +51,7 @@ namespace DorelAppBackend.Controllers
             Console.WriteLine("GOT REQUEST TO VERIFY USER");
             var result = loginService.VerifyUser(request.Email, request.VerificationCode);
 
-            switch (result)
-            {
-                case VerifyUserEnum.VerificationSuccesful:
-                    return Ok(new LoginResponse() { Message = "Verification success" });
-
-                case VerifyUserEnum.UserAlreadyRegistered:
-                    return BadRequest(new LoginResponse() { Message = "User already registered" });
-
-                case VerifyUserEnum.EmailDoesNotExist:
-                    return BadRequest(new LoginResponse() { Message = "Email does not exist" });
-
-                case VerifyUserEnum.VerificationCodeInvalid:
-                    return BadRequest(new LoginResponse() { Message = "Verification code invalid" });
-            }
-
-            return NotFound(new LoginResponse() { Message = "Not found" });
+            return Ok(result);
         }
     }
 }
