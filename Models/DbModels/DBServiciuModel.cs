@@ -3,16 +3,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DorelAppBackend.Models.DbModels
 {
-    public class UserLoginInfoModel
+    public class DBServiciuModel
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int ID { get; set; }
+        public int ServiciuIdID { get; set; }
 
         public string Name { get; set; }
-
-        public string Email { get; set; }
-
-        public string Password { get; set; }
     }
 }

@@ -17,11 +17,11 @@ namespace DorelAppBackend.Services.Implementation
 {
     public class LoginService : ILoginService
     {
-        private LoginDbContext loginDbContext;
+        private DorelDbContext dorelDbContext;
         private readonly IRedisCacheService _redisCacheService;
         private readonly IMailService _mailService;
         private readonly IPasswordHashService _passwordHashService;
-        public LoginService(LoginDbContext loginDbContext,
+        public LoginService(DorelDbContext dorelDbContext,
             IRedisCacheService redisCacheService,
             IMailService mailService,
             IPasswordHashService passwordHashService)
@@ -29,12 +29,12 @@ namespace DorelAppBackend.Services.Implementation
             _redisCacheService = redisCacheService;
             _mailService = mailService;
             _passwordHashService = passwordHashService;
-            this.loginDbContext = loginDbContext;
+            this.dorelDbContext = dorelDbContext;
         }
 
         public string GenerateJwtToken(string userEmail, bool isRefreshToken=false)
         {
-            //var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET");
+            var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET");
             string inputString = "ThisIsASecretKey1!@@";
             byte[] bytes = Encoding.UTF8.GetBytes(inputString);
             string base64String = Convert.ToBase64String(bytes);
@@ -70,13 +70,13 @@ namespace DorelAppBackend.Services.Implementation
         public Maybe<string[]> LoginGoogle(string email, string name, string idToken)
         {
             var response = new Maybe<string[]>();
-            var userExists = loginDbContext.Users.Any(e => e.Email == email);
+            var userExists = dorelDbContext.Users.Any(e => e.Email == email);
             if (VerifyGoogleToken(idToken))
             {
                 if (!userExists)
                 {
-                    loginDbContext.Users.Add(new UserLoginInfoModel() { Email = email, Password = "", Name = name });
-                    loginDbContext.SaveChanges();
+                    dorelDbContext.Users.Add(new DBUserLoginInfoModel() { Email = email, Password = "", Name = name });
+                    dorelDbContext.SaveChanges();
                 }
                 response.SetSuccess(new string[] {GenerateJwtToken(email, true), GenerateJwtToken(email) });
             }
@@ -107,7 +107,7 @@ namespace DorelAppBackend.Services.Implementation
         public Maybe<string[]> LoginUser(string email, string password)
         {
             var response = new Maybe<string[]>();
-            var user = loginDbContext.Users.Where(e => e.Email == email).FirstOrDefault();
+            var user = dorelDbContext.Users.Where(e => e.Email == email).FirstOrDefault();
             if(user != null)
             {
                 var hashPassword = user.Password;
@@ -138,12 +138,12 @@ namespace DorelAppBackend.Services.Implementation
 
                 if (verificationObject.VerificationCode == verificationCode)
                 {
-                    var userExists = loginDbContext.Users.Any(e => e.Email == email);
+                    var userExists = dorelDbContext.Users.Any(e => e.Email == email);
 
                     if (!userExists)
                     {
-                        loginDbContext.Users.Add(new UserLoginInfoModel() { Email = email, Password = verificationObject.Password, Name = verificationObject.Name });
-                        loginDbContext.SaveChanges();
+                        dorelDbContext.Users.Add(new DBUserLoginInfoModel() { Email = email, Password = verificationObject.Password, Name = verificationObject.Name });
+                        dorelDbContext.SaveChanges();
 
                         result.SetSuccess("Verification ok");
                     }

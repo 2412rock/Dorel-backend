@@ -54,6 +54,7 @@ builder.Services.AddTransient<IRedisService, RedisService>();
 builder.Services.AddTransient<IRedisCacheService, RedisCacheService>();
 builder.Services.AddTransient<IMailService, MailService>();
 builder.Services.AddTransient<IPasswordHashService, PasswordHashService>();
+builder.Services.AddTransient<IDataService, DataService>();
 
 // Add configuration
 builder.Configuration.AddJsonFile("appsettings.json", optional: false);
@@ -73,8 +74,8 @@ else
 }
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
 
-builder.Services.AddDbContext<LoginDbContext>(options =>
-    options.UseSqlServer($"Server={hostIp},1433;Database=UsersDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
+builder.Services.AddDbContext<DorelDbContext>(options =>
+    options.UseSqlServer($"Server={hostIp},1433;Database=DorelDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
 
 
 var app = builder.Build();
