@@ -93,6 +93,11 @@ namespace DorelAppBackend.Services.Implementation
                         {
                             AssignServiciu(user, serviciu);
                         }
+                        else
+                        {
+                            result.SetException($"Serviciu could not be found after it was inserted: {serviciuItem}");
+                            return result;
+                        }
                     }
                 }
 
@@ -112,6 +117,11 @@ namespace DorelAppBackend.Services.Implementation
                     }
                 }
 
+            }
+            else
+            {
+                result.SetException("User does not exist");
+                return result;
             }
             _dorelDbContext.SaveChanges();
             result.SetSuccess("Assigned success");
