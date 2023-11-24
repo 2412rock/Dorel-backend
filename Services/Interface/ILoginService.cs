@@ -5,7 +5,7 @@ namespace DorelAppBackend.Services.Interface
 {
     public interface ILoginService
     {
-        public void SendVerification(string email, string password, string name);
+        public Maybe<string> SendVerification(string email, string password, string name);
 
         public Maybe<string[]> LoginUser(string email, string password);
 

@@ -10,5 +10,8 @@ namespace DorelAppBackend.Models.DbModels
         public int ServiciuIdID { get; set; }
 
         public string Name { get; set; }
+
+        public ICollection<JunctionServicii> JunctionServicii { get; set; } = new List<JunctionServicii>();
+
     }
 }

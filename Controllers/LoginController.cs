@@ -40,8 +40,8 @@ namespace DorelAppBackend.Controllers
         [Route("api/sendVerification")]
         public IActionResult RegisterPreVertified([FromBody] RegisterUserRequest request)
         {
-            loginService.SendVerification(request.Email, request.Password, request.Name);
-            return Ok(new LoginResponse() { Message = "Verification sent succesfully" });
+            var result = loginService.SendVerification(request.Email, request.Password, request.Name);
+            return Ok(result);
         }
 
         [HttpPost]

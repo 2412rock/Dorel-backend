@@ -30,5 +30,13 @@ namespace DorelAppBackend.Controllers
             var result = _dataService.GetServicii(request.StartsWith);
             return Ok(result);
         }
+
+        [HttpPost]
+        [Route("api/assignUserServiciiAndJudet")]
+        public IActionResult AssignUserServicii(AssignRequest request)
+        {
+            var result = _dataService.AssignUserServiciu(request.UserEmail, request.Servicii, request.Judete);
+            return Ok(result);
+        }
     }
 }

@@ -168,8 +168,9 @@ namespace DorelAppBackend.Services.Implementation
             return result;
         }
 
-        public void SendVerification(string email, string password, string name)
+        public Maybe<string> SendVerification(string email, string password, string name)
         {
+            var result = new Maybe<string>();
             try
             {
                 if (_redisCacheService.GetValueFromCache(email) != null)
@@ -188,12 +189,15 @@ namespace DorelAppBackend.Services.Implementation
                 var dataSerial = JsonSerializer.Serialize(data);
                 _mailService.SendMailToUser(verificationCode, email);
                 _redisCacheService.SetValueInCache(email, dataSerial);
+                result.SetSuccess("Verification sent succesfully");
             }
 
-            catch
+            catch(Exception ex)
             {
-                throw;
+
+                result.SetException(ex.Message);
             }
+            return result;
         }
 
         public void DeleteVerification(string email)
