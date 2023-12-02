@@ -2,6 +2,7 @@
 using Minio;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
+using System.Net;
 
 namespace DorelAppBackend.Services.Implementation
 {
@@ -15,9 +16,27 @@ namespace DorelAppBackend.Services.Implementation
             SetupMinio();
         }
 
+        private string ResolveIp()
+        {
+            string hostIp;
+            IPAddress[] addresses = Dns.GetHostAddresses("host.docker.internal");
+            if (addresses.Length > 0)
+            {
+                // we are running in docker
+                hostIp = addresses[0].ToString();
+            }
+            else
+            {
+                // running locally
+                hostIp = Environment.GetEnvironmentVariable("HOST_IP");
+            }
+
+            return hostIp;
+        }
+
         private void SetupMinio()
         {
-            var endpoint = "192.168.1.236:9000";
+            var endpoint = $"{ResolveIp()}:9000";
             var accessKey = "minioadmin";
             var secretKey = Environment.GetEnvironmentVariable("MINIO_PASS");
             try
