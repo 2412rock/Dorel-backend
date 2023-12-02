@@ -3,6 +3,7 @@ using DorelAppBackend.Services.Implementation;
 using DorelAppBackend.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 
 namespace DorelAppBackend.Controllers
 {
@@ -33,10 +34,22 @@ namespace DorelAppBackend.Controllers
 
         [HttpPost]
         [Route("api/assignUserServiciiAndJudet")]
-        public IActionResult AssignUserServicii(AssignRequest request)
+        public async Task<IActionResult> AssignUserServicii(AssignRequest request)
         {
-            var result = _dataService.AssignUserServiciu(request.UserEmail, request.Servicii, request.Judete);
-            return Ok(result);
+            StringValues authorizationHeaderValues;
+            if (HttpContext.Request.Headers.TryGetValue("Authorization", out authorizationHeaderValues))
+            {
+                string authorizationHeader = authorizationHeaderValues.FirstOrDefault();
+
+                if (!string.IsNullOrWhiteSpace(authorizationHeader) && authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                {
+                    string token = authorizationHeader.Substring("Bearer ".Length).Trim();
+                    // 'token' now contains the JWT token from the request
+                    var result = await _dataService.AssignUserServiciu(token, request.Servicii, request.Judete, request.ServiciiAndImagini);
+                    return Ok(result);
+                }
+            }
+            return BadRequest();
         }
     }
 }

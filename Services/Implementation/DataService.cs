@@ -1,4 +1,5 @@
 ﻿using DorelAppBackend.Models.DbModels;
+using DorelAppBackend.Models.Requests;
 using DorelAppBackend.Models.Responses;
 using DorelAppBackend.Services.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -8,10 +9,14 @@ namespace DorelAppBackend.Services.Implementation
     public class DataService: IDataService
     {
         private DorelDbContext _dorelDbContext;
+        private IBlobStorageService _blobStorageService;
+        private ILoginService _loginService;
 
-        public DataService(DorelDbContext dorelDbContext)
+        public DataService(DorelDbContext dorelDbContext, IBlobStorageService blobStorageService, ILoginService loginService)
         {
             _dorelDbContext = dorelDbContext;
+            _blobStorageService = blobStorageService;
+            _loginService = loginService;
         }
 
         public Maybe<DBJudetModel[]> GetJudete(string startsWith)
@@ -51,9 +56,18 @@ namespace DorelAppBackend.Services.Implementation
                 ServiciuIdID = serviciu.ServiciuIdID
             };
 
-            // Add the junction entity to the respective collections
-            user.JunctionServicii.Add(junction);
-            serviciu.JunctionServicii.Add(junction);
+            var junctionExists = _dorelDbContext.JunctionServicii.Any(e => e.UserID == junction.UserID && e.ServiciuIdID == junction.ServiciuIdID);
+            if (!junctionExists)
+            {
+                user.JunctionServicii.Add(junction);
+                serviciu.JunctionServicii.Add(junction);
+            }
+            else
+            {
+                throw new Exception("Junction serviciu exists");
+            }
+            
+            
         }
 
         private void AssignJudet(DBUserLoginInfoModel user, DBJudetModel judet)
@@ -65,19 +79,46 @@ namespace DorelAppBackend.Services.Implementation
                 JudetID = judet.JudetID
             };
 
-            // Add the junction entity to the respective collections
-            user.JunctionJudete.Add(junction);
-            judet.JunctionJudete.Add(junction);
-
-           // Save changes to the database
+            var junctionExists = _dorelDbContext.JunctionJudete.Any(e => e.UserID == junction.UserID && e.JudetID == junction.JudetID);
+            if (!junctionExists)
+            {
+                user.JunctionJudete.Add(junction);
+                judet.JunctionJudete.Add(junction);
+            }
+            else
+            {
+                throw new Exception("Junction judet exists");
+            }
+            
         }
 
-        public Maybe<string> AssignUserServiciu(string userEmail, string[] servicii, string[] judete)
+        private async Task PublishImagesForServiciu(ServiciiAndImagini[] serviciiAndImagini, string serviciuName ,int serviciuId, DBUserLoginInfoModel user)
         {
+            foreach(var serviciuAndImagini in serviciiAndImagini)
+            {
+                foreach (var serviciu in serviciuAndImagini.Servicii)
+                {
+                    if (serviciu == serviciuName)
+                    {
+                        var pictureIndex = 0;
+                        foreach (var imagine in serviciuAndImagini.Imagini)
+                        {
+                            var fileName = $"{user.UserID}-{serviciuId}-{pictureIndex}.{imagine.FileExtension}";
+                            await _blobStorageService.UploadImage(fileName, imagine.FileExtension, imagine.FileType, imagine.FileContentBase64);
+                            pictureIndex++;
+                        }
+                    }
+                }
+            }
+        }
+
+        public async Task<Maybe<string>> AssignUserServiciu(string token, string[] servicii, string[] judete, ServiciiAndImagini[] serviciiAndImagini)
+        {
+            var userEmail = _loginService.GetEmailFromToken(token);
             var result = new Maybe<string>();
             // Assuming you have instances of User and Serviciu entities
             var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault(); // Fetch or create the user
-
+            
             if(user != null)
             {
                 foreach (var serviciuItem in servicii)
@@ -86,18 +127,40 @@ namespace DorelAppBackend.Services.Implementation
 
                     if (serviciu == null)
                     {
+                        // Serviciu does not exist, create it
                         _dorelDbContext.Servicii.Add(new DBServiciuModel() { Name = serviciuItem.ToLower() });
                         _dorelDbContext.SaveChanges();
                         serviciu = _dorelDbContext.Servicii.FirstOrDefault(s => s.Name.ToLower() == serviciuItem.ToLower());
-                        if(serviciu != null)
+                        
+                    }
+
+                    if (serviciu != null)
+                    {
+                        try
                         {
                             AssignServiciu(user, serviciu);
                         }
-                        else
+                        catch(Exception e)
                         {
-                            result.SetException($"Serviciu could not be found after it was inserted: {serviciuItem}");
+                            result.SetException($"Failed to assign serviciu: {e.Message}");
                             return result;
                         }
+                        
+                    }
+                    else
+                    {
+                        result.SetException($"Serviciu could not be found after it was inserted: {serviciuItem}");
+                        return result;
+                    }
+
+                    try
+                    {
+                        await PublishImagesForServiciu(serviciiAndImagini, serviciu.Name, serviciu.ServiciuIdID, user);
+                    }
+                    catch (Exception e)
+                    {
+                        result.SetException($"Exception publishing images for servicii {e.Message}");
+                        return result;
                     }
                 }
 
@@ -107,7 +170,15 @@ namespace DorelAppBackend.Services.Implementation
 
                     if (judet != null)
                     {
-                        AssignJudet(user, judet);
+                        try
+                        {
+                            AssignJudet(user, judet);
+                        }
+                        catch(Exception e)
+                        {
+                            result.SetException($"Failed to assign judet: {e.Message}");
+                            return result;
+                        }
                     }
                     else
                     {
@@ -115,15 +186,23 @@ namespace DorelAppBackend.Services.Implementation
                         _dorelDbContext.ChangeTracker.Clear();
                         return result;
                     }
-                }
-
+                } 
             }
             else
             {
                 result.SetException("User does not exist");
                 return result;
             }
-            _dorelDbContext.SaveChanges();
+            try
+            {
+                _dorelDbContext.SaveChanges();
+            }
+            catch(Exception e)
+            {
+                result.SetException($"Failed to save db changes {e.Message} {e.InnerException.Message}");
+                return result;
+            }
+            
             result.SetSuccess("Assigned success");
             return result;
         }

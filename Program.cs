@@ -55,6 +55,7 @@ builder.Services.AddTransient<IRedisCacheService, RedisCacheService>();
 builder.Services.AddTransient<IMailService, MailService>();
 builder.Services.AddTransient<IPasswordHashService, PasswordHashService>();
 builder.Services.AddTransient<IDataService, DataService>();
+builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 
 // Add configuration
 builder.Configuration.AddJsonFile("appsettings.json", optional: false);

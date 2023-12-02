@@ -14,6 +14,9 @@ namespace DorelAppBackend.Services
 
         public DbSet<DBJudetModel> Judete { get; set; }
 
+        public DbSet<JunctionServicii> JunctionServicii { get; set; }
+        public DbSet<JunctionJudete> JunctionJudete { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Define for servicii
