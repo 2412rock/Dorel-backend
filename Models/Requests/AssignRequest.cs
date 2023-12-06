@@ -4,6 +4,6 @@
     {
         public string[] Servicii { get; set; }
         public string[] Judete { get; set; }
-        public ServiciiAndImagini[] ServiciiAndImagini { get; set; }
+        public ServiciiImaginiDescriere[] ServiciiAndImagini { get; set; }
     }
 }

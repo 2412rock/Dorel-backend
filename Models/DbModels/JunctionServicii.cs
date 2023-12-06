@@ -5,6 +5,8 @@
         public int UserID { get; set; }
         public int ServiciuIdID { get; set; }
 
+        public string Descriere { get; set; }
+
         public DBUserLoginInfoModel User { get; set; }
         public DBServiciuModel Serviciu { get; set; }
     }

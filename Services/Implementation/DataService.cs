@@ -47,7 +47,7 @@ namespace DorelAppBackend.Services.Implementation
             return result;
         }
 
-        private void AssignServiciu(DBUserLoginInfoModel user, DBServiciuModel serviciu)
+        private void AssignServiciu(DBUserLoginInfoModel user, DBServiciuModel serviciu, ServiciiImaginiDescriere[] sid)
         {
             // Create a new JunctionServicii instance
             var junction = new JunctionServicii
@@ -55,6 +55,8 @@ namespace DorelAppBackend.Services.Implementation
                 UserID = user.UserID,
                 ServiciuIdID = serviciu.ServiciuIdID
             };
+
+            AddDescriptionForServiciu(sid, serviciu.Name, junction);
 
             var junctionExists = _dorelDbContext.JunctionServicii.Any(e => e.UserID == junction.UserID && e.ServiciuIdID == junction.ServiciuIdID);
             if (!junctionExists)
@@ -92,7 +94,7 @@ namespace DorelAppBackend.Services.Implementation
             
         }
 
-        private async Task PublishImagesForServiciu(ServiciiAndImagini[] serviciiAndImagini, string serviciuName ,int serviciuId, DBUserLoginInfoModel user)
+        private async Task PublishImagesForServiciu(ServiciiImaginiDescriere[] serviciiAndImagini, string serviciuName ,int serviciuId, DBUserLoginInfoModel user)
         {
             foreach(var serviciuAndImagini in serviciiAndImagini)
             {
@@ -112,7 +114,24 @@ namespace DorelAppBackend.Services.Implementation
             }
         }
 
-        public async Task<Maybe<string>> AssignUserServiciu(string token, string[] servicii, string[] judete, ServiciiAndImagini[] serviciiAndImagini)
+        private void AddDescriptionForServiciu(ServiciiImaginiDescriere[] sid, string serviciuName, JunctionServicii junctionServicii)
+        {
+            foreach (var sidItem in sid)
+            {
+                foreach (var serviciu in sidItem.Servicii)
+                {
+                    if (serviciu == serviciuName)
+                    {
+                        junctionServicii.Descriere = sidItem.Descriere;
+                        return;
+                    }
+                }
+            }
+
+            throw new Exception($"Failed to assign description for serviciu {serviciuName} {sid}");
+        }
+
+        public async Task<Maybe<string>> AssignUserServiciu(string token, string[] servicii, string[] judete, ServiciiImaginiDescriere[] sid)
         {
             var userEmail = _loginService.GetEmailFromToken(token);
             var result = new Maybe<string>();
@@ -138,7 +157,7 @@ namespace DorelAppBackend.Services.Implementation
                     {
                         try
                         {
-                            AssignServiciu(user, serviciu);
+                            AssignServiciu(user, serviciu, sid);
                         }
                         catch(Exception e)
                         {
@@ -155,7 +174,7 @@ namespace DorelAppBackend.Services.Implementation
 
                     try
                     {
-                        await PublishImagesForServiciu(serviciiAndImagini, serviciu.Name, serviciu.ServiciuIdID, user);
+                        await PublishImagesForServiciu(sid, serviciu.Name, serviciu.ServiciuIdID, user);
                     }
                     catch (Exception e)
                     {
