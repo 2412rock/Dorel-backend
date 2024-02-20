@@ -62,6 +62,7 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false);
 
 // Add DbContext
 string hostIp = "";
+
 IPAddress[] addresses = Dns.GetHostAddresses("host.docker.internal");
 if (addresses.Length > 0)
 {
@@ -70,8 +71,7 @@ if (addresses.Length > 0)
 }
 else
 {
-    // running locally
-    hostIp = Environment.GetEnvironmentVariable("HOST_IP");
+    throw new Exception("No local ip found in docker dns");
 }
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
 

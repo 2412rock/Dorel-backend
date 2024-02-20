@@ -14,40 +14,12 @@ namespace DorelAppBackend.Services
 
         public DbSet<DBJudetModel> Judete { get; set; }
 
-        public DbSet<JunctionServicii> JunctionServicii { get; set; }
-        public DbSet<JunctionJudete> JunctionJudete { get; set; }
+        public DbSet<JunctionServiciuJudete> JunctionServiciuJudete { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Define for servicii
+            modelBuilder.Entity<JunctionServiciuJudete>().HasKey(j => new { j.UserID, j.ServiciuIdID, j.JudetID });
 
-            modelBuilder.Entity<JunctionServicii>()
-                .HasKey(js => new { js.UserID, js.ServiciuIdID });
-
-            modelBuilder.Entity<JunctionServicii>()
-                .HasOne(js => js.User)
-                .WithMany(u => u.JunctionServicii)
-                .HasForeignKey(js => js.UserID);
-
-            modelBuilder.Entity<JunctionServicii>()
-                .HasOne(js => js.Serviciu)
-                .WithMany(s => s.JunctionServicii)
-                .HasForeignKey(js => js.ServiciuIdID);
-
-            // Define for judete
-
-            modelBuilder.Entity<JunctionJudete>()
-                .HasKey(js => new { js.UserID, js.JudetID });
-
-            modelBuilder.Entity<JunctionJudete>()
-                .HasOne(js => js.User)
-                .WithMany(u => u.JunctionJudete)
-                .HasForeignKey(js => js.UserID);
-
-            modelBuilder.Entity<JunctionJudete>()
-                .HasOne(js => js.Judet)
-                .WithMany(s => s.JunctionJudete)
-                .HasForeignKey(js => js.JudetID);
         }
     }
 }

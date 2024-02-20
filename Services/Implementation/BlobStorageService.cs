@@ -27,8 +27,7 @@ namespace DorelAppBackend.Services.Implementation
             }
             else
             {
-                // running locally
-                hostIp = Environment.GetEnvironmentVariable("HOST_IP");
+                throw new Exception("No local ip found in docker dns");
             }
 
             return hostIp;

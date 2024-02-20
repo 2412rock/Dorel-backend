@@ -7,11 +7,9 @@ namespace DorelAppBackend.Models.DbModels
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int ServiciuIdID { get; set; }
+        public int ID { get; set; }
 
         public string Name { get; set; }
-
-        public ICollection<JunctionServicii> JunctionServicii { get; set; } = new List<JunctionServicii>();
 
     }
 }

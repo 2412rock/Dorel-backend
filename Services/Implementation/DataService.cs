@@ -3,6 +3,7 @@ using DorelAppBackend.Models.Requests;
 using DorelAppBackend.Models.Responses;
 using DorelAppBackend.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 
 namespace DorelAppBackend.Services.Implementation
 {
@@ -47,183 +48,84 @@ namespace DorelAppBackend.Services.Implementation
             return result;
         }
 
-        private void AssignServiciu(DBUserLoginInfoModel user, DBServiciuModel serviciu, ServiciiImaginiDescriere[] sid)
+        public Maybe<string[]> GetServiciiForUser(string email)
         {
-            // Create a new JunctionServicii instance
-            var junction = new JunctionServicii
-            {
-                UserID = user.UserID,
-                ServiciuIdID = serviciu.ServiciuIdID
-            };
-
-            AddDescriptionForServiciu(sid, serviciu.Name, junction);
-
-            var junctionExists = _dorelDbContext.JunctionServicii.Any(e => e.UserID == junction.UserID && e.ServiciuIdID == junction.ServiciuIdID);
-            if (!junctionExists)
-            {
-                user.JunctionServicii.Add(junction);
-                serviciu.JunctionServicii.Add(junction);
-            }
-            else
-            {
-                throw new Exception("Junction serviciu exists");
-            }
-            
-            
-        }
-
-        private void AssignJudet(DBUserLoginInfoModel user, DBJudetModel judet)
-        {
-            // Create a new JunctionServicii instance
-            var junction = new JunctionJudete()
-            {
-                UserID = user.UserID,
-                JudetID = judet.JudetID
-            };
-
-            var junctionExists = _dorelDbContext.JunctionJudete.Any(e => e.UserID == junction.UserID && e.JudetID == junction.JudetID);
-            if (!junctionExists)
-            {
-                user.JunctionJudete.Add(junction);
-                judet.JunctionJudete.Add(junction);
-            }
-            else
-            {
-                throw new Exception("Junction judet exists");
-            }
-            
-        }
-
-        private async Task PublishImagesForServiciu(ServiciiImaginiDescriere[] serviciiAndImagini, string serviciuName ,int serviciuId, DBUserLoginInfoModel user)
-        {
-            foreach(var serviciuAndImagini in serviciiAndImagini)
-            {
-                foreach (var serviciu in serviciuAndImagini.Servicii)
-                {
-                    if (serviciu == serviciuName)
-                    {
-                        var pictureIndex = 0;
-                        foreach (var imagine in serviciuAndImagini.Imagini)
-                        {
-                            var fileName = $"{user.UserID}-{serviciuId}-{pictureIndex}.{imagine.FileExtension}";
-                            await _blobStorageService.UploadImage(fileName, imagine.FileExtension, imagine.FileType, imagine.FileContentBase64);
-                            pictureIndex++;
-                        }
-                    }
-                }
-            }
-        }
-
-        private void AddDescriptionForServiciu(ServiciiImaginiDescriere[] sid, string serviciuName, JunctionServicii junctionServicii)
-        {
-            foreach (var sidItem in sid)
-            {
-                foreach (var serviciu in sidItem.Servicii)
-                {
-                    if (serviciu == serviciuName)
-                    {
-                        junctionServicii.Descriere = sidItem.Descriere;
-                        return;
-                    }
-                }
-            }
-
-            throw new Exception($"Failed to assign description for serviciu {serviciuName} {sid}");
-        }
-
-        public async Task<Maybe<string>> AssignUserServiciu(string token, string[] servicii, string[] judete, ServiciiImaginiDescriere[] sid)
-        {
-            var userEmail = _loginService.GetEmailFromToken(token);
-            var result = new Maybe<string>();
-            // Assuming you have instances of User and Serviciu entities
-            var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault(); // Fetch or create the user
-            
+            var maybe = new Maybe<string[]>();
+            var user = _dorelDbContext.Users.Where(user => user.Email == email).FirstOrDefault();
             if(user != null)
             {
-                foreach (var serviciuItem in servicii)
+                var servicii = _dorelDbContext.JunctionServiciuJudete.Where(element => element.UserID == user.UserID).GroupBy(e => e.JudetID).Select(group => group.First());
+                var serviciiString = new List<string>();
+                foreach(var serviciu in servicii)
                 {
-                    var serviciu = _dorelDbContext.Servicii.FirstOrDefault(s => s.Name.ToLower() == serviciuItem.ToLower());
-
-                    if (serviciu == null)
+                    var serviciuEntry = _dorelDbContext.Servicii.Where(x => x.ID == serviciu.ServiciuIdID).FirstOrDefault();
+                    if(serviciuEntry != null)
                     {
-                        // Serviciu does not exist, create it
-                        _dorelDbContext.Servicii.Add(new DBServiciuModel() { Name = serviciuItem.ToLower() });
-                        _dorelDbContext.SaveChanges();
-                        serviciu = _dorelDbContext.Servicii.FirstOrDefault(s => s.Name.ToLower() == serviciuItem.ToLower());
-                        
-                    }
-
-                    if (serviciu != null)
-                    {
-                        try
-                        {
-                            AssignServiciu(user, serviciu, sid);
-                        }
-                        catch(Exception e)
-                        {
-                            result.SetException($"Failed to assign serviciu: {e.Message}");
-                            return result;
-                        }
-                        
+                        serviciiString.Add(serviciuEntry.Name);
                     }
                     else
                     {
-                        result.SetException($"Serviciu could not be found after it was inserted: {serviciuItem}");
-                        return result;
-                    }
-
-                    try
-                    {
-                        await PublishImagesForServiciu(sid, serviciu.Name, serviciu.ServiciuIdID, user);
-                    }
-                    catch (Exception e)
-                    {
-                        result.SetException($"Exception publishing images for servicii {e.Message}");
-                        return result;
+                        throw new Exception($"Cannot find serviciu with ID {serviciu.ServiciuIdID}");
                     }
                 }
-
-                foreach (var judetItem in judete)
-                {
-                    var judet = _dorelDbContext.Judete.FirstOrDefault(s => s.Name.ToLower() == judetItem.ToLower());
-
-                    if (judet != null)
-                    {
-                        try
-                        {
-                            AssignJudet(user, judet);
-                        }
-                        catch(Exception e)
-                        {
-                            result.SetException($"Failed to assign judet: {e.Message}");
-                            return result;
-                        }
-                    }
-                    else
-                    {
-                        result.SetException($"This judet does not exist {judetItem}");
-                        _dorelDbContext.ChangeTracker.Clear();
-                        return result;
-                    }
-                } 
+                maybe.SetSuccess(serviciiString.ToArray());
             }
             else
             {
-                result.SetException("User does not exist");
-                return result;
+                maybe.SetException("No user with such email");
             }
-            try
+
+            return maybe;
+        }
+
+        public async Task<Maybe<string>> AssignServiciu(string token, int serviciuId, int[] judeteIds,string descriere, Imagine[] imagini)
+        {
+            var response = new Maybe<string>();
+            response.SetSuccess("Ok");
+            var userEmail = _loginService.GetEmailFromToken(token);
+            var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
+            if(user != null)
             {
-                _dorelDbContext.SaveChanges();
+                var junctionExists = _dorelDbContext.JunctionServiciuJudete.Any(e => e.UserID == user.UserID && e.ServiciuIdID == serviciuId);
+                if (!junctionExists)
+                {
+                    foreach (var judetId in judeteIds)
+                    {
+                        var junction = new JunctionServiciuJudete
+                        {
+                            UserID = user.UserID,
+                            ServiciuIdID = serviciuId,
+                            JudetID = judetId,
+                            Descriere = descriere,
+                        };
+                        _dorelDbContext.JunctionServiciuJudete.Add(junction);
+                    }
+                }
+                else
+                {
+                    response.SetException("Serviciu already added");
+                }
+                await _dorelDbContext.SaveChangesAsync();
+                await PublishImagesForServiciu(imagini, serviciuId, user);
             }
-            catch(Exception e)
+            else
             {
-                result.SetException($"Failed to save db changes {e.Message} {e.InnerException.Message}");
-                return result;
+                response.SetException($"No user found with this email {userEmail}");
             }
             
-            result.SetSuccess("Assigned success");
-            return result;
+            return response;
+        }
+
+
+        private async Task PublishImagesForServiciu(Imagine[] imagini, int serviciuId, DBUserLoginInfoModel user)
+        {
+            var pictureIndex = 0;
+            foreach (var imagine in imagini)
+            {
+                var fileName = $"{user.UserID}-{serviciuId}-{pictureIndex}.{imagine.FileExtension}";
+                await _blobStorageService.UploadImage(fileName, imagine.FileExtension, imagine.FileType, imagine.FileContentBase64);
+                pictureIndex++;
+            }
         }
     }
 }

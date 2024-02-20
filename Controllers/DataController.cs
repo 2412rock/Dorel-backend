@@ -16,6 +16,14 @@ namespace DorelAppBackend.Controllers
             _dataService = dataService;
         }
 
+        [HttpGet]
+        [Route("api/getServiciiUser")]
+        public IActionResult GetServiciiUser([FromQuery] string email)
+        {
+            _dataService.GetServiciiForUser(email);
+            return Ok();
+        }
+
         [HttpPost]
         [Route("api/getJudete")]
         public IActionResult GetJudete(StartsWithRequest request)
@@ -45,7 +53,7 @@ namespace DorelAppBackend.Controllers
                 {
                     string token = authorizationHeader.Substring("Bearer ".Length).Trim();
                     // 'token' now contains the JWT token from the request
-                    var result = await _dataService.AssignUserServiciu(token, request.Servicii, request.Judete, request.ServiciiAndImagini);
+                    var result = await _dataService.AssignServiciu(token, request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini);
                     return Ok(result);
                 }
             }

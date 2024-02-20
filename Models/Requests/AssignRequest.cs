@@ -2,8 +2,9 @@
 {
     public class AssignRequest
     {
-        public string[] Servicii { get; set; }
-        public string[] Judete { get; set; }
-        public ServiciiImaginiDescriere[] ServiciiAndImagini { get; set; }
+        public int ServiciuId { get; set; }
+        public int[] JudeteIds { get; set; }
+        public Imagine[] Imagini { get; set; }
+        public string Descriere { get; set; }
     }
 }
