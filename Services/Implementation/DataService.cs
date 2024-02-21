@@ -53,7 +53,7 @@ namespace DorelAppBackend.Services.Implementation
             var maybe = new Maybe<DBServiciuModel[]>();
             var user = _dorelDbContext.Users.Where(user => user.Email == email).FirstOrDefault();
             if(user != null)
-            {
+            { 
                 var serviciiIds = _dorelDbContext.JunctionServiciuJudete
                 .Where(jsj => jsj.UserID == user.UserID)
                 .Select(jsj => jsj.ServiciuIdID)
