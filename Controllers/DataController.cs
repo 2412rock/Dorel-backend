@@ -1,4 +1,5 @@
-﻿using DorelAppBackend.Models.Requests;
+﻿using DorelAppBackend.Filters;
+using DorelAppBackend.Models.Requests;
 using DorelAppBackend.Services.Implementation;
 using DorelAppBackend.Services.Interface;
 using Microsoft.AspNetCore.Http;
@@ -16,12 +17,13 @@ namespace DorelAppBackend.Controllers
             _dataService = dataService;
         }
 
+        [AuthorizationFilter]
         [HttpGet]
         [Route("api/getServiciiUser")]
-        public IActionResult GetServiciiUser([FromQuery] string email)
+        public IActionResult GetServiciiUser()
         {
-            _dataService.GetServiciiForUser(email);
-            return Ok();
+            var result = _dataService.GetServiciiForUser((string)HttpContext.Items["Email"]);
+            return Ok(result);
         }
 
         [HttpPost]
@@ -40,24 +42,14 @@ namespace DorelAppBackend.Controllers
             return Ok(result);
         }
 
+        [AuthorizationFilter]
         [HttpPost]
         [Route("api/assignUserServiciiAndJudet")]
         public async Task<IActionResult> AssignUserServicii(AssignRequest request)
         {
-            StringValues authorizationHeaderValues;
-            if (HttpContext.Request.Headers.TryGetValue("Authorization", out authorizationHeaderValues))
-            {
-                string authorizationHeader = authorizationHeaderValues.FirstOrDefault();
-
-                if (!string.IsNullOrWhiteSpace(authorizationHeader) && authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-                {
-                    string token = authorizationHeader.Substring("Bearer ".Length).Trim();
-                    // 'token' now contains the JWT token from the request
-                    var result = await _dataService.AssignServiciu(token, request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini);
-                    return Ok(result);
-                }
-            }
-            return BadRequest();
+            // 'token' now contains the JWT token from the request
+            var result = await _dataService.AssignServiciu((string)HttpContext.Items["Email"], request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini);
+            return Ok(result);
         }
     }
 }

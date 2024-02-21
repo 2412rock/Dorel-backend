@@ -32,25 +32,6 @@ namespace DorelAppBackend.Services.Implementation
             this.dorelDbContext = dorelDbContext;
         }
 
-        public string GetEmailFromToken(string token)
-        {
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
-
-            if (jsonToken != null)
-            {
-                // Extract token claims
-                foreach (var claim in jsonToken.Claims)
-                {
-                    if(claim.Type == JwtRegisteredClaimNames.Sub)
-                    {
-                        return claim.Value;
-                    }
-                }
-            }
-            return null;
-        }
-
         public string GenerateJwtToken(string userEmail, bool isRefreshToken=false)
         {
             var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET");

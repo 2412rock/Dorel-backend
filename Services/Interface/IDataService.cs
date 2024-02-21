@@ -9,8 +9,8 @@ namespace DorelAppBackend.Services.Interface
         public Maybe<DBJudetModel[]> GetJudete(string startsWith);
         public Maybe<DBServiciuModel[]> GetServicii(string startsWith);
 
-        public Maybe<string[]> GetServiciiForUser(string email);
-        public Task<Maybe<string>> AssignServiciu(string token, int serviciuId, int[] judeteIds, string descriere, Imagine[] imagini);
+        public Maybe<DBServiciuModel[]> GetServiciiForUser(string email);
+        public Task<Maybe<string>> AssignServiciu(string userEmail, int serviciuId, int[] judeteIds, string descriere, Imagine[] imagini);
 
 
     }

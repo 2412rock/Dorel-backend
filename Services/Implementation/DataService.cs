@@ -48,27 +48,29 @@ namespace DorelAppBackend.Services.Implementation
             return result;
         }
 
-        public Maybe<string[]> GetServiciiForUser(string email)
+        public Maybe<DBServiciuModel[]> GetServiciiForUser(string email)
         {
-            var maybe = new Maybe<string[]>();
+            var maybe = new Maybe<DBServiciuModel[]>();
             var user = _dorelDbContext.Users.Where(user => user.Email == email).FirstOrDefault();
             if(user != null)
             {
-                var servicii = _dorelDbContext.JunctionServiciuJudete.Where(element => element.UserID == user.UserID).GroupBy(e => e.JudetID).Select(group => group.First());
-                var serviciiString = new List<string>();
-                foreach(var serviciu in servicii)
+                var serviciiIds = _dorelDbContext.JunctionServiciuJudete
+                .Where(jsj => jsj.UserID == user.UserID)
+                .Select(jsj => jsj.ServiciuIdID)
+                .ToList();
+
+                var resultList = _dorelDbContext.Servicii
+                    .Where(serviciu => serviciiIds.Contains(serviciu.ID))
+                    .ToList();
+
+                if (resultList.Count > 0)
                 {
-                    var serviciuEntry = _dorelDbContext.Servicii.Where(x => x.ID == serviciu.ServiciuIdID).FirstOrDefault();
-                    if(serviciuEntry != null)
-                    {
-                        serviciiString.Add(serviciuEntry.Name);
-                    }
-                    else
-                    {
-                        throw new Exception($"Cannot find serviciu with ID {serviciu.ServiciuIdID}");
-                    }
+                    maybe.SetSuccess(resultList.ToArray());
                 }
-                maybe.SetSuccess(serviciiString.ToArray());
+                else
+                {
+                    maybe.SetException($"No servicii found for user with email {email}");
+                }
             }
             else
             {
@@ -78,11 +80,10 @@ namespace DorelAppBackend.Services.Implementation
             return maybe;
         }
 
-        public async Task<Maybe<string>> AssignServiciu(string token, int serviciuId, int[] judeteIds,string descriere, Imagine[] imagini)
+        public async Task<Maybe<string>> AssignServiciu(string userEmail, int serviciuId, int[] judeteIds,string descriere, Imagine[] imagini)
         {
             var response = new Maybe<string>();
             response.SetSuccess("Ok");
-            var userEmail = _loginService.GetEmailFromToken(token);
             var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
             if(user != null)
             {
