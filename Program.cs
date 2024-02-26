@@ -23,7 +23,7 @@ builder.WebHost.UseKestrel(options =>
         catch
         {
             // local
-            listenOptions.UseHttps("C:/Users/Adi/Desktop/certs/backendcertificate.pfx", Environment.GetEnvironmentVariable("PFX_PASS"));
+            listenOptions.UseHttps("C:/Users/Adi/Desktop/certs/backendcertificate.pfx");
         }
         
     });
