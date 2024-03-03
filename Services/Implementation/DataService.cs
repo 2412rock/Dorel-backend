@@ -69,7 +69,7 @@ namespace DorelAppBackend.Services.Implementation
                 }
                 else
                 {
-                    maybe.SetException($"No servicii found for user with email {email}");
+                    maybe.SetSuccess(new DBServiciuModel[0]);
                 }
             }
             else
