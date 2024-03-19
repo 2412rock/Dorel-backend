@@ -19,6 +19,33 @@ namespace DorelAppBackend.Controllers
 
         [AuthorizationFilter]
         [HttpGet]
+        [Route("api/getImaginiForServiciu")]
+        public async Task<IActionResult> GetImaginiForServiciu([FromQuery] int serviciuId)
+        {
+            var result = await _dataService.GetImaginiServiciu(serviciuId, (string)HttpContext.Items["Email"]);
+            return Ok(result);
+        }
+
+        [AuthorizationFilter]
+        [HttpGet]
+        [Route("api/getJudeteForServiciu")]
+        public IActionResult GetJudeteForServiciu([FromQuery] int serviciuId)
+        {
+            var result = _dataService.GetJudeteForServiciu(serviciuId, (string)HttpContext.Items["Email"]);
+            return Ok(result);
+        }
+
+        [AuthorizationFilter]
+        [HttpGet]
+        [Route("api/getDescriereForServiciu")]
+        public IActionResult GetDescriereForServiciu([FromQuery] int serviciuId)
+        {
+            var result = _dataService.GetDescriereForServiciu(serviciuId, (string)HttpContext.Items["Email"]);
+            return Ok(result);
+        }
+
+        [AuthorizationFilter]
+        [HttpGet]
         [Route("api/getServiciiUser")]
         public IActionResult GetServiciiUser()
         {

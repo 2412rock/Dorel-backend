@@ -1,7 +1,12 @@
-﻿namespace DorelAppBackend.Services.Interface
+﻿using DorelAppBackend.Models.Requests;
+
+namespace DorelAppBackend.Services.Interface
 {
     public interface IBlobStorageService
     {
-        public Task UploadImage(string fileName, string fileExtension, string fileType, string fileContentBase64);
+        public string GetFileName(int userID, int serviciuId, int pictureIndex);
+        public Task UploadImage(string fileName, string fileType, string fileContentBase64);
+
+        public Task<Imagine> DownloadImage(string fileName);
     }
 }

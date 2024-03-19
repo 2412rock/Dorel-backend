@@ -3,6 +3,7 @@ using DorelAppBackend.Models.Requests;
 using DorelAppBackend.Models.Responses;
 using DorelAppBackend.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using Minio.Exceptions;
 using Newtonsoft.Json.Linq;
 
 namespace DorelAppBackend.Services.Implementation
@@ -74,7 +75,7 @@ namespace DorelAppBackend.Services.Implementation
             }
             else
             {
-                maybe.SetException("No user with such email");
+                maybe.SetException("No user found");
             }
 
             return maybe;
@@ -117,14 +118,91 @@ namespace DorelAppBackend.Services.Implementation
             return response;
         }
 
+        public async Task<Maybe<List<Imagine>>> GetImaginiServiciu(int serviciuId, string userEmail)
+        {
+            var imgList = new List<Imagine>();
+            var maybe = new Maybe<List<Imagine>>();
+            var pictureIndex = 0;
+            var user = _dorelDbContext.Users.FirstOrDefault(u => u.Email == userEmail);   
+            if(user != null)
+            {
+                while (true)
+                {
+                    try
+                    {
+                        var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, pictureIndex);
+                        var img = await _blobStorageService.DownloadImage(fileName);
+                        imgList.Add(img);
+                        pictureIndex++;
+                    }
+                    catch (ObjectNotFoundException e)
+                    {
+                        maybe.SetSuccess(imgList);
+                        return maybe;
+                    }
+                    catch(Exception e)
+                    {
+                        maybe.SetException($"Something went wrong downloading images {e.Message}");
+                        return maybe;
+                    }
+                }
+            }
+            maybe.SetException("No user found");
+            return maybe;
+        }
+
+        public Maybe<List<DBJudetModel>> GetJudeteForServiciu(int serviciuId, string userEmail)
+        {
+            var maybe = new Maybe<List<DBJudetModel>>();
+            var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
+            if(user != null)
+            {
+                var result = _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.UserID == user.UserID).ToArray();
+                var judete = new List<DBJudetModel>();
+                foreach(var item in result)
+                {
+                    var judet = _dorelDbContext.Judete.Where(x => x.ID == item.JudetID).FirstOrDefault();
+                    if(judet != null)
+                    {
+                        judete.Add(judet);
+                    }
+                    
+                }
+                maybe.SetSuccess(judete);
+                return maybe;
+            }
+            maybe.SetException($"No user with email {userEmail}");
+            return maybe;
+        }
+
+        public Maybe<string> GetDescriereForServiciu(int serviciuId, string userEmail)
+        {
+            var maybe = new Maybe<string>();
+            var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
+            if (user != null)
+            {
+                var result = _dorelDbContext.JunctionServiciuJudete.FirstOrDefault(x => x.ServiciuIdID == serviciuId && x.UserID == user.UserID);
+                if(result != null)
+                {
+                    maybe.SetSuccess(result.Descriere);
+                    return maybe;
+                }
+
+                maybe.SetException("No description found for user");
+                return maybe;
+            }
+            maybe.SetException($"No user with email {userEmail}");
+            return maybe;
+        }
+
 
         private async Task PublishImagesForServiciu(Imagine[] imagini, int serviciuId, DBUserLoginInfoModel user)
         {
             var pictureIndex = 0;
             foreach (var imagine in imagini)
             {
-                var fileName = $"{user.UserID}-{serviciuId}-{pictureIndex}.{imagine.FileExtension}";
-                await _blobStorageService.UploadImage(fileName, imagine.FileExtension, imagine.FileType, imagine.FileContentBase64);
+                var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, pictureIndex);
+                await _blobStorageService.UploadImage(fileName, imagine.FileType, imagine.FileContentBase64);
                 pictureIndex++;
             }
         }
