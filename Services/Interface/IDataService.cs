@@ -19,5 +19,7 @@ namespace DorelAppBackend.Services.Interface
         public Maybe<string> GetDescriereForServiciu(int serviciuId, string userEmail);
 
         public Task<Maybe<string>> EditServiciu(string userEmail, int serviciuId, int[] judeteIds, string descriere, Imagine[] imagini);
+
+        public Maybe<string> DeleteUserServiciu(string userEmail, int serviciuId);
     }
 }

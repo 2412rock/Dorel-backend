@@ -175,6 +175,32 @@ namespace DorelAppBackend.Services.Implementation
             return response;
         }
 
+        public Maybe<string> DeleteUserServiciu(string userEmail, int serviciuId) 
+        {
+            var response = new Maybe<string>();
+            response.SetSuccess("Ok");
+            var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
+            if (user != null)
+            {
+                var junctionRows = _dorelDbContext.JunctionServiciuJudete.Where(e => e.UserID == user.UserID && e.ServiciuIdID == serviciuId);
+                if (junctionRows.Count() > 0)
+                {
+                    _dorelDbContext.JunctionServiciuJudete.RemoveRange(junctionRows);
+                    _dorelDbContext.SaveChanges();
+                    response.SetSuccess("Success deleting serviciu for user");
+                }
+                else
+                {
+                    response.SetException("No serviciu found to delte");
+                }
+            }
+            else
+            {
+                response.SetException("No user found");
+            }
+            return response;
+        }
+
         private void DiscardDbChanges()
         {
             foreach (var entry in _dorelDbContext.ChangeTracker.Entries().ToList())

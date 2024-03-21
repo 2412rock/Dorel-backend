@@ -74,7 +74,6 @@ namespace DorelAppBackend.Controllers
         [Route("api/assignUserServiciiAndJudet")]
         public async Task<IActionResult> AssignUserServicii(AssignRequest request)
         {
-            // 'token' now contains the JWT token from the request
             var result = await _dataService.AssignServiciu((string)HttpContext.Items["Email"], request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini);
             return Ok(result);
         }
@@ -84,8 +83,16 @@ namespace DorelAppBackend.Controllers
         [Route("api/editUserServiciu")]
         public async Task<IActionResult> EditUserServiciu(AssignRequest request)
         {
-            // 'token' now contains the JWT token from the request
             var result = await _dataService.EditServiciu((string)HttpContext.Items["Email"], request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini);
+            return Ok(result);
+        }
+
+        [AuthorizationFilter]
+        [HttpDelete]
+        [Route("api/deleteUserServiciu")]
+        public IActionResult DeleteUserServiciu([FromQuery] int serviciuId)
+        {
+            var result =  _dataService.DeleteUserServiciu((string)HttpContext.Items["Email"], serviciuId);
             return Ok(result);
         }
     }
