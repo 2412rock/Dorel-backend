@@ -8,5 +8,7 @@ namespace DorelAppBackend.Services.Interface
         public Task UploadImage(string fileName, string fileType, string fileContentBase64);
 
         public Task<Imagine> DownloadImage(string fileName);
+
+        public Task DeleteImage(string fileName);
     }
 }

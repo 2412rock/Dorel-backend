@@ -62,6 +62,17 @@ namespace DorelAppBackend.Services.Implementation
             }
         }
 
+        public async Task DeleteImage(string fileName)
+        {
+            var objectStat = await minio.StatObjectAsync(new StatObjectArgs().WithBucket(bucketName).WithObject(fileName));
+            if(objectStat.ContentType == null)
+            {
+                throw new ObjectNotFoundException();
+            }
+            var args = new RemoveObjectArgs().WithBucket(bucketName).WithObject(fileName);
+            await minio.RemoveObjectAsync(args);
+        }
+
         public async Task<Imagine> DownloadImage(string fileName)
         {
             var memoryStream = new MemoryStream();

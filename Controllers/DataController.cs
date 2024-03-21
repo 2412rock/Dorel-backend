@@ -78,5 +78,15 @@ namespace DorelAppBackend.Controllers
             var result = await _dataService.AssignServiciu((string)HttpContext.Items["Email"], request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini);
             return Ok(result);
         }
+
+        [AuthorizationFilter]
+        [HttpPost]
+        [Route("api/editUserServiciu")]
+        public async Task<IActionResult> EditUserServiciu(AssignRequest request)
+        {
+            // 'token' now contains the JWT token from the request
+            var result = await _dataService.EditServiciu((string)HttpContext.Items["Email"], request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini);
+            return Ok(result);
+        }
     }
 }
