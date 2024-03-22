@@ -3,7 +3,9 @@ using DorelAppBackend.Models.Requests;
 using DorelAppBackend.Models.Responses;
 using DorelAppBackend.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using Minio.Exceptions;
 using Newtonsoft.Json.Linq;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DorelAppBackend.Services.Implementation
 {
@@ -74,7 +76,7 @@ namespace DorelAppBackend.Services.Implementation
             }
             else
             {
-                maybe.SetException("No user with such email");
+                maybe.SetException("No user found");
             }
 
             return maybe;
@@ -117,14 +119,205 @@ namespace DorelAppBackend.Services.Implementation
             return response;
         }
 
+        public async Task<Maybe<string>> EditServiciu(string userEmail, int serviciuId, int[] judeteIds, string descriere, Imagine[] imagini)
+        {
+            var response = new Maybe<string>();
+            response.SetSuccess("Ok");
+            var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
+            if (user != null)
+            {
+                var junctionExists = _dorelDbContext.JunctionServiciuJudete.Any(e => e.UserID == user.UserID && e.ServiciuIdID == serviciuId);
+                if (junctionExists)
+                {
+                    foreach (var judetId in judeteIds)
+                    {
+                        var junction = new JunctionServiciuJudete
+                        {
+                            UserID = user.UserID,
+                            ServiciuIdID = serviciuId,
+                            JudetID = judetId,
+                            Descriere = descriere,
+                        };
+                        var judetEntryExists = _dorelDbContext.JunctionServiciuJudete.Any(e => e.JudetID == judetId && e.UserID == user.UserID && e.ServiciuIdID == serviciuId);
+                        if (judetEntryExists)
+                        {
+                            _dorelDbContext.JunctionServiciuJudete.Update(junction);
+                        }
+                        else
+                        {
+                            _dorelDbContext.JunctionServiciuJudete.Add(junction);
+                        }
+                    }
+                }
+                else
+                {
+                    response.SetException("Invalid edit request");
+                    return response;
+                }
+                try
+                {
+                    await PublishImagesForServiciu(imagini, serviciuId, user, true);
+                }
+                catch(Exception e)
+                {
+                    DiscardDbChanges();
+                    response.SetException($"Something went wrong {e.Message}");
+                    return response;
+                }
+                
+                await _dorelDbContext.SaveChangesAsync();
+            }
+            else
+            {
+                response.SetException($"No user found with this email {userEmail}");
+            }
 
-        private async Task PublishImagesForServiciu(Imagine[] imagini, int serviciuId, DBUserLoginInfoModel user)
+            return response;
+        }
+
+        public Maybe<string> DeleteUserServiciu(string userEmail, int serviciuId) 
+        {
+            var response = new Maybe<string>();
+            response.SetSuccess("Ok");
+            var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
+            if (user != null)
+            {
+                var junctionRows = _dorelDbContext.JunctionServiciuJudete.Where(e => e.UserID == user.UserID && e.ServiciuIdID == serviciuId);
+                if (junctionRows.Count() > 0)
+                {
+                    _dorelDbContext.JunctionServiciuJudete.RemoveRange(junctionRows);
+                    _dorelDbContext.SaveChanges();
+                    response.SetSuccess("Success deleting serviciu for user");
+                }
+                else
+                {
+                    response.SetException("No serviciu found to delte");
+                }
+            }
+            else
+            {
+                response.SetException("No user found");
+            }
+            return response;
+        }
+
+        private void DiscardDbChanges()
+        {
+            foreach (var entry in _dorelDbContext.ChangeTracker.Entries().ToList())
+            {
+                entry.State = EntityState.Detached;
+            }
+        }
+
+        public async Task<Maybe<List<Imagine>>> GetImaginiServiciu(int serviciuId, string userEmail)
+        {
+            var imgList = new List<Imagine>();
+            var maybe = new Maybe<List<Imagine>>();
+            var pictureIndex = 0;
+            var user = _dorelDbContext.Users.FirstOrDefault(u => u.Email == userEmail);   
+            if(user != null)
+            {
+                while (true)
+                {
+                    try
+                    {
+                        var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, pictureIndex);
+                        var img = await _blobStorageService.DownloadImage(fileName);
+                        imgList.Add(img);
+                        pictureIndex++;
+                    }
+                    catch (ObjectNotFoundException e)
+                    {
+                        maybe.SetSuccess(imgList);
+                        return maybe;
+                    }
+                    catch(Exception e)
+                    {
+                        maybe.SetException($"Something went wrong downloading images {e.Message}");
+                        return maybe;
+                    }
+                }
+            }
+            maybe.SetException("No user found");
+            return maybe;
+        }
+
+        public Maybe<List<DBJudetModel>> GetJudeteForServiciu(int serviciuId, string userEmail)
+        {
+            var maybe = new Maybe<List<DBJudetModel>>();
+            var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
+            if(user != null)
+            {
+                var result = _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.UserID == user.UserID).ToArray();
+                var judete = new List<DBJudetModel>();
+                foreach(var item in result)
+                {
+                    var judet = _dorelDbContext.Judete.Where(x => x.ID == item.JudetID).FirstOrDefault();
+                    if(judet != null)
+                    {
+                        judete.Add(judet);
+                    }
+                    
+                }
+                maybe.SetSuccess(judete);
+                return maybe;
+            }
+            maybe.SetException($"No user with email {userEmail}");
+            return maybe;
+        }
+
+        public Maybe<string> GetDescriereForServiciu(int serviciuId, string userEmail)
+        {
+            var maybe = new Maybe<string>();
+            var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
+            if (user != null)
+            {
+                var result = _dorelDbContext.JunctionServiciuJudete.FirstOrDefault(x => x.ServiciuIdID == serviciuId && x.UserID == user.UserID);
+                if(result != null)
+                {
+                    maybe.SetSuccess(result.Descriere);
+                    return maybe;
+                }
+
+                maybe.SetException("No description found for user");
+                return maybe;
+            }
+            maybe.SetException($"No user with email {userEmail}");
+            return maybe;
+        }
+
+
+        private async Task PublishImagesForServiciu(Imagine[] imagini, int serviciuId, DBUserLoginInfoModel user, bool edit=false)
         {
             var pictureIndex = 0;
+            if (edit)
+            {
+                //remove all pictures for serviciu
+                while (true)
+                {
+                    var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, pictureIndex);
+                    try
+                    {
+                        await _blobStorageService.DeleteImage(fileName);
+                    }
+                    catch(ObjectNotFoundException e)
+                    {
+                        break;
+                    }
+                    catch(Exception e)
+                    {
+                        throw;
+                    }
+                    
+                    pictureIndex++;
+                }
+                
+            }
+            pictureIndex = 0;
             foreach (var imagine in imagini)
             {
-                var fileName = $"{user.UserID}-{serviciuId}-{pictureIndex}.{imagine.FileExtension}";
-                await _blobStorageService.UploadImage(fileName, imagine.FileExtension, imagine.FileType, imagine.FileContentBase64);
+                var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, pictureIndex);
+                await _blobStorageService.UploadImage(fileName, imagine.FileType, imagine.FileContentBase64);
                 pictureIndex++;
             }
         }

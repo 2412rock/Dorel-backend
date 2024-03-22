@@ -1,8 +1,11 @@
-﻿using DorelAppBackend.Services.Interface;
+﻿using DorelAppBackend.Models.Requests;
+using DorelAppBackend.Services.Interface;
 using Minio;
+using Minio.DataModel;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
 using System.Net;
+using System.Reactive.Linq;
 
 namespace DorelAppBackend.Services.Implementation
 {
@@ -10,10 +13,16 @@ namespace DorelAppBackend.Services.Implementation
     {
 
         private IMinioClient minio;
+        private string bucketName = "servicii-and-pictures";
 
         public BlobStorageService()
         {
             SetupMinio();
+        }
+
+        public string GetFileName(int userID, int serviciuId, int pictureIndex)
+        {
+            return $"{userID}-{serviciuId}-{pictureIndex}";
         }
 
         private string ResolveIp()
@@ -52,9 +61,44 @@ namespace DorelAppBackend.Services.Implementation
                 throw;
             }
         }
-        public async Task UploadImage(string fileName, string fileExtension, string fileType, string fileContentBase64)
+
+        public async Task DeleteImage(string fileName)
         {
-            var bucketName = "servicii-and-pictures";
+            var objectStat = await minio.StatObjectAsync(new StatObjectArgs().WithBucket(bucketName).WithObject(fileName));
+            if(objectStat.ContentType == null)
+            {
+                throw new ObjectNotFoundException();
+            }
+            var args = new RemoveObjectArgs().WithBucket(bucketName).WithObject(fileName);
+            await minio.RemoveObjectAsync(args);
+        }
+
+        public async Task<Imagine> DownloadImage(string fileName)
+        {
+            var memoryStream = new MemoryStream();
+            
+                // Create GetObjectArgs with the bucket name, object name, and callback stream
+                var getObj = new GetObjectArgs().WithBucket(bucketName).WithObject(fileName).WithCallbackStream( (stream) =>
+                {
+                     stream.CopyTo(memoryStream);
+                });
+            var objectStat = await minio.StatObjectAsync(new StatObjectArgs().WithBucket(bucketName).WithObject(fileName));
+            // Download object asynchronously and await for the completion
+            await minio.GetObjectAsync(getObj);
+
+                // Convert the memory stream to a base64 string and return
+                var base64 =  Convert.ToBase64String(memoryStream.ToArray());
+
+            var imagine = new Imagine() { FileContentBase64 = $"data:{objectStat.ContentType};base64," + base64, FileType = objectStat.ContentType };
+
+            return imagine;
+            
+        }
+    
+
+        public async Task UploadImage(string fileName, string fileType, string fileContentBase64)
+        {
+            
             //var location = "us-east-1";
             var objectName = fileName;
             
