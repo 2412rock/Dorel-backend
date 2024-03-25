@@ -37,6 +37,15 @@ namespace DorelAppBackend.Controllers
 
         [AuthorizationFilter]
         [HttpGet]
+        [Route("api/getServiciiForJudet")]
+        public async Task<IActionResult> GetServiciiForJudet([FromQuery] int serviciuId, int judetId, int pageNumber)
+        {
+            var result = await _dataService.GetServiciiForJudet(serviciuId, judetId,(string)HttpContext.Items["Email"], pageNumber);
+            return Ok(result);
+        }
+
+        [AuthorizationFilter]
+        [HttpGet]
         [Route("api/getDescriereForServiciu")]
         public IActionResult GetDescriereForServiciu([FromQuery] int serviciuId)
         {
