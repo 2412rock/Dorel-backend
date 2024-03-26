@@ -5,6 +5,7 @@ using DorelAppBackend.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Minio.Exceptions;
 using Newtonsoft.Json.Linq;
+using System.Runtime.ConstrainedExecution;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace DorelAppBackend.Services.Implementation
@@ -277,11 +278,13 @@ namespace DorelAppBackend.Services.Implementation
                 var listSearchResults = new List<SearchResultResponse>();
                 foreach(var junction in result)
                 {
+                    
                     var serviciu = await _dorelDbContext.Servicii.FirstOrDefaultAsync(x => x.ID == junction.ServiciuIdID);
                     
                     if(serviciu != null)
                     {
-                        var searchResult = new SearchResultResponse() { UserName = user.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, StarsAverage = 5 };
+                        var imagineCover = await  _blobStorageService.DownloadImage(_blobStorageService.GetFileName(user.UserID, serviciu.ID, 0));
+                        var searchResult = new SearchResultResponse() { UserName = user.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, StarsAverage = 5, ImagineCover = imagineCover };
                         listSearchResults.Add(searchResult);
                     }   
                 }
