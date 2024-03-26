@@ -5,6 +5,7 @@ using DorelAppBackend.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Minio.Exceptions;
 using Newtonsoft.Json.Linq;
+using System.Runtime.ConstrainedExecution;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace DorelAppBackend.Services.Implementation
@@ -263,6 +264,35 @@ namespace DorelAppBackend.Services.Implementation
                 return maybe;
             }
             maybe.SetException($"No user with email {userEmail}");
+            return maybe;
+        }
+
+        public async Task<Maybe<List<SearchResultResponse>>> GetServiciiForJudet(int serviciuId, int judetId ,string userEmail, int pageNumber)
+        {
+            const int PAGE_SIZE = 20;
+            var maybe = new Maybe<List<SearchResultResponse>>();
+            var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+            if (user != null)
+            {
+                var result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.JudetID == judetId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
+                var listSearchResults = new List<SearchResultResponse>();
+                foreach(var junction in result)
+                {
+                    
+                    var serviciu = await _dorelDbContext.Servicii.FirstOrDefaultAsync(x => x.ID == junction.ServiciuIdID);
+                    
+                    if(serviciu != null)
+                    {
+                        var imagineCover = await  _blobStorageService.DownloadImage(_blobStorageService.GetFileName(user.UserID, serviciu.ID, 0));
+                        var searchResult = new SearchResultResponse() { UserName = user.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, StarsAverage = 5, ImagineCover = imagineCover };
+                        listSearchResults.Add(searchResult);
+                    }   
+                }
+                maybe.SetSuccess(listSearchResults);
+                
+                return maybe;
+            }
+            maybe.SetException($"No user with such email {userEmail}");
             return maybe;
         }
 
