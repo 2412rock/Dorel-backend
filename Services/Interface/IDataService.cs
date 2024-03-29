@@ -14,7 +14,7 @@ namespace DorelAppBackend.Services.Interface
 
         public Maybe<List<DBJudetModel>> GetJudeteForServiciu(int serviciuId, string userEmail);
 
-        public Task<Maybe<List<Imagine>>> GetImaginiServiciu(int serviciuId, string userEmail);
+        public Task<Maybe<List<Imagine>>> GetImaginiServiciuUser(int serviciuId, string userEmail);
 
         public Maybe<string> GetDescriereForServiciu(int serviciuId, string userEmail);
 
@@ -23,5 +23,7 @@ namespace DorelAppBackend.Services.Interface
         public Maybe<string> DeleteUserServiciu(string userEmail, int serviciuId);
 
         public Task<Maybe<List<SearchResultResponse>>> GetServiciiForJudet(int serviciuId, int judetId, string userEmail, int pageNumber);
+
+        public Task<Maybe<List<Imagine>>> GetImaginiForServiciuOfUser(int serviciuId, int judetId, int userId);
     }
 }
