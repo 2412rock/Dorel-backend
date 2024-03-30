@@ -300,33 +300,27 @@ namespace DorelAppBackend.Services.Implementation
             return maybe;
         }
 
-        public async Task<Maybe<List<SearchResultResponse>>> GetServiciiForJudet(int serviciuId, int judetId ,string userEmail, int pageNumber)
+        public async Task<Maybe<List<SearchResultResponse>>> GetServiciiForJudet(int serviciuId, int judetId, int pageNumber)
         {
             const int PAGE_SIZE = 20;
             var maybe = new Maybe<List<SearchResultResponse>>();
-            var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
-            if (user != null)
+            var result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.JudetID == judetId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
+            var listSearchResults = new List<SearchResultResponse>();
+            foreach (var junction in result)
             {
-                var result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.JudetID == judetId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
-                var listSearchResults = new List<SearchResultResponse>();
-                foreach(var junction in result)
-                {
-                    
-                    var serviciu = await _dorelDbContext.Servicii.FirstOrDefaultAsync(x => x.ID == junction.ServiciuIdID);
-                    var userOfServiciu = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.UserID == junction.UserID);
 
-                    if (serviciu != null && userOfServiciu != null)
-                    {
-                        var imagineCover = await  _blobStorageService.DownloadImage(_blobStorageService.GetFileName(userOfServiciu.UserID, serviciu.ID, 0));
-                        var searchResult = new SearchResultResponse() { UserName = user.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, StarsAverage = 5, ImagineCover = imagineCover, UserId = junction.UserID, ServiciuId = junction.ServiciuIdID, JudetId = junction.JudetID };
-                        listSearchResults.Add(searchResult);
-                    } 
+                var serviciu = await _dorelDbContext.Servicii.FirstOrDefaultAsync(x => x.ID == junction.ServiciuIdID);
+                var userOfServiciu = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.UserID == junction.UserID);
+
+                if (serviciu != null && userOfServiciu != null)
+                {
+                    var imagineCover = await _blobStorageService.DownloadImage(_blobStorageService.GetFileName(userOfServiciu.UserID, serviciu.ID, 0));
+                    var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, StarsAverage = 5, ImagineCover = imagineCover, UserId = junction.UserID, ServiciuId = junction.ServiciuIdID, JudetId = junction.JudetID };
+                    listSearchResults.Add(searchResult);
                 }
-                maybe.SetSuccess(listSearchResults);
-                
-                return maybe;
             }
-            maybe.SetException($"No user with such email {userEmail}");
+            maybe.SetSuccess(listSearchResults);
+
             return maybe;
         }
 

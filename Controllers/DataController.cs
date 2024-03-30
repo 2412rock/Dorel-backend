@@ -35,12 +35,11 @@ namespace DorelAppBackend.Controllers
             return Ok(result);
         }
 
-        [AuthorizationFilter]
         [HttpGet]
         [Route("api/getServiciiForJudet")]
         public async Task<IActionResult> GetServiciiForJudet([FromQuery] int serviciuId, int judetId, int pageNumber)
         {
-            var result = await _dataService.GetServiciiForJudet(serviciuId, judetId,(string)HttpContext.Items["Email"], pageNumber);
+            var result = await _dataService.GetServiciiForJudet(serviciuId, judetId, pageNumber);
             return Ok(result);
         }
 
@@ -53,7 +52,6 @@ namespace DorelAppBackend.Controllers
             return Ok(result);
         }
 
-        [AuthorizationFilter]
         [HttpGet]
         [Route("api/getImaginiServiciuUser")]
         public async Task<IActionResult> GetImaginiServiciuUser([FromQuery] int serviciuId, int judetId, int userId)
