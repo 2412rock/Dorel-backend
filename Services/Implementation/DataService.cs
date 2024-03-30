@@ -210,7 +210,7 @@ namespace DorelAppBackend.Services.Implementation
             }
         }
 
-        public async Task<Maybe<List<Imagine>>> GetImaginiServiciu(int serviciuId, string userEmail)
+        public async Task<Maybe<List<Imagine>>> GetImaginiServiciuUser(int serviciuId, string userEmail)
         {
             var imgList = new List<Imagine>();
             var maybe = new Maybe<List<Imagine>>();
@@ -233,6 +233,39 @@ namespace DorelAppBackend.Services.Implementation
                         return maybe;
                     }
                     catch(Exception e)
+                    {
+                        maybe.SetException($"Something went wrong downloading images {e.Message}");
+                        return maybe;
+                    }
+                }
+            }
+            maybe.SetException("No user found");
+            return maybe;
+        }
+
+        public async Task<Maybe<List<Imagine>>> GetImaginiServiciu(int serviciuId, int judetId,string userEmail)
+        {
+            var imgList = new List<Imagine>();
+            var maybe = new Maybe<List<Imagine>>();
+            var pictureIndex = 0;
+            var user = _dorelDbContext.Users.FirstOrDefault(u => u.Email == userEmail);
+            if (user != null)
+            {
+                while (true)
+                {
+                    try
+                    {
+                        var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, pictureIndex);
+                        var img = await _blobStorageService.DownloadImage(fileName);
+                        imgList.Add(img);
+                        pictureIndex++;
+                    }
+                    catch (ObjectNotFoundException e)
+                    {
+                        maybe.SetSuccess(imgList);
+                        return maybe;
+                    }
+                    catch (Exception e)
                     {
                         maybe.SetException($"Something went wrong downloading images {e.Message}");
                         return maybe;
@@ -267,32 +300,68 @@ namespace DorelAppBackend.Services.Implementation
             return maybe;
         }
 
-        public async Task<Maybe<List<SearchResultResponse>>> GetServiciiForJudet(int serviciuId, int judetId ,string userEmail, int pageNumber)
+        public async Task<Maybe<List<SearchResultResponse>>> GetServiciiForJudet(int serviciuId, int judetId, int pageNumber)
         {
             const int PAGE_SIZE = 20;
             var maybe = new Maybe<List<SearchResultResponse>>();
-            var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+            var result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.JudetID == judetId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
+            var listSearchResults = new List<SearchResultResponse>();
+            foreach (var junction in result)
+            {
+
+                var serviciu = await _dorelDbContext.Servicii.FirstOrDefaultAsync(x => x.ID == junction.ServiciuIdID);
+                var userOfServiciu = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.UserID == junction.UserID);
+
+                if (serviciu != null && userOfServiciu != null)
+                {
+                    var imagineCover = await _blobStorageService.DownloadImage(_blobStorageService.GetFileName(userOfServiciu.UserID, serviciu.ID, 0));
+                    var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, StarsAverage = 5, ImagineCover = imagineCover, UserId = junction.UserID, ServiciuId = junction.ServiciuIdID, JudetId = junction.JudetID };
+                    listSearchResults.Add(searchResult);
+                }
+            }
+            maybe.SetSuccess(listSearchResults);
+
+            return maybe;
+        }
+
+        public async Task<Maybe<List<Imagine>>> GetImaginiForServiciuOfUser(int serviciuId, int judetId, int userId)
+        {
+            var maybe = new Maybe<List<Imagine>>();
+            var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.UserID == userId);
             if (user != null)
             {
-                var result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.JudetID == judetId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
-                var listSearchResults = new List<SearchResultResponse>();
-                foreach(var junction in result)
+                var result = await _dorelDbContext.JunctionServiciuJudete.FirstOrDefaultAsync(x => x.ServiciuIdID == serviciuId && x.JudetID == judetId && x.UserID == userId);
+                var imagini = new List<Imagine>();
+                if(result != null)
                 {
-                    
-                    var serviciu = await _dorelDbContext.Servicii.FirstOrDefaultAsync(x => x.ID == junction.ServiciuIdID);
-                    
-                    if(serviciu != null)
+                    var pictureIndex = 0;
+                    while (true)
                     {
-                        var imagineCover = await  _blobStorageService.DownloadImage(_blobStorageService.GetFileName(user.UserID, serviciu.ID, 0));
-                        var searchResult = new SearchResultResponse() { UserName = user.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, StarsAverage = 5, ImagineCover = imagineCover };
-                        listSearchResults.Add(searchResult);
-                    }   
+                        try
+                        {
+                            var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, pictureIndex);
+                            var imagine = await _blobStorageService.DownloadImage(fileName);
+                            imagini.Add(imagine);
+                            pictureIndex++;
+                        }
+                        catch(ObjectNotFoundException e)
+                        {
+                            maybe.SetSuccess(imagini);
+                            return maybe;
+
+                        }
+                        catch(Exception e)
+                        {
+                            maybe.SetException($"Could not download image {e.Message}");
+                            return maybe;
+                        }
+                    }
                 }
-                maybe.SetSuccess(listSearchResults);
-                
+                maybe.SetException("Couldnt find junction");
                 return maybe;
             }
-            maybe.SetException($"No user with such email {userEmail}");
+            maybe.SetException("No user found with that id");
+
             return maybe;
         }
 
