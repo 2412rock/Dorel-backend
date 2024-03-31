@@ -38,9 +38,9 @@ namespace DorelAppBackend.Controllers
 
         [HttpPost]
         [Route("api/sendVerification")]
-        public IActionResult RegisterPreVertified([FromBody] RegisterUserRequest request)
+        public async Task<IActionResult> RegisterPreVertified([FromBody] RegisterUserRequest request)
         {
-            var result = loginService.SendVerification(request.Email, request.Password, request.Name);
+            var result = await loginService.SendVerification(request.Email, request.Password, request.Name);
             return Ok(result);
         }
 

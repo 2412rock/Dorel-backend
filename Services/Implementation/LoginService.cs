@@ -167,9 +167,15 @@ namespace DorelAppBackend.Services.Implementation
             return result;
         }
 
-        public Maybe<string> SendVerification(string email, string password, string name)
+        public async Task<Maybe<string>> SendVerification(string email, string password, string name)
         {
             var result = new Maybe<string>();
+            var userExists = await dorelDbContext.Users.AnyAsync(u => u.Email == email);
+            if (userExists)
+            {
+                result.SetException("Email already in use");
+                return result;
+            }
             try
             {
                 if (_redisCacheService.GetValueFromCache(email) != null)
