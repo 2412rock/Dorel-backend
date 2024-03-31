@@ -11,5 +11,7 @@ namespace DorelAppBackend.Models.DbModels
 
         public string Descriere { get; set; }
 
+        public decimal? Rating { get; set; }
+
     }
 }

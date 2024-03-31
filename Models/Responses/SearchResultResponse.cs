@@ -7,9 +7,15 @@ namespace DorelAppBackend.Models.Responses
     {
         public string UserName { get; set; }
 
+        public int UserId { get; set; }
+
         public string Descriere { get; set; }
 
         public string ServiciuName { get; set; }
+
+        public int ServiciuId { get; set; } 
+
+        public int JudetId { get; set; }
 
         public double StarsAverage { get; set; }
 

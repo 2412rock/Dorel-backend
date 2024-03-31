@@ -49,7 +49,7 @@ namespace DorelAppBackend.Services.Implementation
                 new Claim(JwtRegisteredClaimNames.Aud, audience), // Token audience
             } : new[] 
             {
-                new Claim(JwtRegisteredClaimNames.Sub, "RefreshTokenSubject"),
+                new Claim(JwtRegisteredClaimNames.Sub, userEmail),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
 
