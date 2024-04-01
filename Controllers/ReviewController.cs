@@ -24,7 +24,6 @@ namespace DorelAppBackend.Controllers
             return Ok(result);
         }
 
-        [AuthorizationFilter]
         [HttpGet]
         [Route("api/getReviews")]
         public async Task<IActionResult> GetReviews([FromQuery] int reviewedUserId, int serviciuId, int pageNumber)
