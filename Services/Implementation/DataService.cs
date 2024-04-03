@@ -86,6 +86,11 @@ namespace DorelAppBackend.Services.Implementation
         public async Task<Maybe<string>> AssignServiciu(string userEmail, int serviciuId, int[] judeteIds,string descriere, Imagine[] imagini)
         {
             var response = new Maybe<string>();
+            if(imagini.Length > 10 && descriere.Length > 250)
+            {
+                response.SetException("Exceed limit of images or description");
+                return response;
+            }
             response.SetSuccess("Ok");
             var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
             if(user != null)
@@ -124,6 +129,11 @@ namespace DorelAppBackend.Services.Implementation
         {
             var response = new Maybe<string>();
             response.SetSuccess("Ok");
+            if (imagini.Length > 10 && descriere.Length > 250)
+            {
+                response.SetException("Exceed limit of images or description");
+                return response;
+            }
             var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
             if (user != null)
             {
