@@ -314,7 +314,25 @@ namespace DorelAppBackend.Services.Implementation
         {
             const int PAGE_SIZE = 20;
             var maybe = new Maybe<List<SearchResultResponse>>();
-            var result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.JudetID == judetId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
+            List<JunctionServiciuJudete> result;
+            if(serviciuId != -1 && judetId != -1) 
+            {
+                result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.JudetID == judetId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
+
+            }
+            else if(judetId != -1)
+            {
+                result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.JudetID == judetId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
+            }
+            else if(serviciuId != -1)
+            {
+                result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
+            }
+            else
+            {
+                maybe.SetException("Invalid query");
+                return maybe;
+            }
             var listSearchResults = new List<SearchResultResponse>();
             foreach (var junction in result)
             {
