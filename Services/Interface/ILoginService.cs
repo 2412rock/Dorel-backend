@@ -13,5 +13,7 @@ namespace DorelAppBackend.Services.Interface
 
         public Maybe<string> VerifyUser(string email, string verificationCode);
 
+        public Maybe<string> RefreshToken(string token);
+
     }
 }

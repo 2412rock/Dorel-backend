@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DorelAppBackend.Models.Responses;
+using DorelAppBackend.Services.Implementation;
+using DorelAppBackend.Services.Interface;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Primitives;
 using System.IdentityModel.Tokens.Jwt;
@@ -7,25 +10,6 @@ namespace DorelAppBackend.Filters
 {
     public class AuthorizationFilter : Attribute, IAuthorizationFilter
     {
-
-        private string GetEmailFromToken(string token)
-        {
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
-
-            if (jsonToken != null)
-            {
-                // Extract token claims
-                foreach (var claim in jsonToken.Claims)
-                {
-                    if (claim.Type == JwtRegisteredClaimNames.Sub)
-                    {
-                        return claim.Value;
-                    }
-                }
-            }
-            return null;
-        }
         public void OnAuthorization(AuthorizationFilterContext context)
         {
             StringValues authorizationHeaderValues;
@@ -35,7 +19,12 @@ namespace DorelAppBackend.Filters
                 if (!string.IsNullOrWhiteSpace(authorizationHeader) && authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                 {
                     string token = authorizationHeader.Substring("Bearer ".Length).Trim();
-                    var email = GetEmailFromToken(token);
+                    var email = TokenHelper.GetEmailFromToken(token);
+                    if (TokenHelper.IsTokenExpired(token))
+                    {
+                        context.Result = new StatusCodeResult(403);
+                        return;
+                    }
                     if(!String.IsNullOrEmpty(email))
                     {
                         context.HttpContext.Items["Email"] = email;
@@ -44,7 +33,7 @@ namespace DorelAppBackend.Filters
                     
                 }
             }
-            context.Result = new UnauthorizedResult();
+            context.Result = new StatusCodeResult(401); ;
             return;
         }
     }

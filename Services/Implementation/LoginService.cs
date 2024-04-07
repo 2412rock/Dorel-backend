@@ -21,6 +21,7 @@ namespace DorelAppBackend.Services.Implementation
         private readonly IRedisCacheService _redisCacheService;
         private readonly IMailService _mailService;
         private readonly IPasswordHashService _passwordHashService;
+
         public LoginService(DorelDbContext dorelDbContext,
             IRedisCacheService redisCacheService,
             IMailService mailService,
@@ -32,39 +33,19 @@ namespace DorelAppBackend.Services.Implementation
             this.dorelDbContext = dorelDbContext;
         }
 
-        public string GenerateJwtToken(string userEmail, bool isRefreshToken=false)
+        public Maybe<string> RefreshToken(string token)
         {
-            var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET");
-            byte[] bytes = Encoding.UTF8.GetBytes(secretKey);
-            string base64String = Convert.ToBase64String(bytes);
-            var securityKey = new SymmetricSecurityKey(Convert.FromBase64String(base64String));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-            var issuer = "dorelapp.xyz";
-            var audience = "endpoint";
-            var claims = !isRefreshToken ? new[]
+            var email = TokenHelper.GetEmailFromToken(token);
+            var result = new Maybe<string>();
+            if (!TokenHelper.IsTokenExpired(token) && email != null)
             {
-                new Claim(JwtRegisteredClaimNames.Sub, userEmail), // User identifier from Google
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique JWT ID
-                new Claim(JwtRegisteredClaimNames.Iss, issuer), // Token issuer
-                new Claim(JwtRegisteredClaimNames.Aud, audience), // Token audience
-            } : new[] 
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, userEmail),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            };
-
-            var token = new JwtSecurityToken(
-                issuer: issuer,
-                audience: audience,
-                claims: claims,
-                expires: isRefreshToken ? DateTime.UtcNow.AddHours(24) : DateTime.UtcNow.AddMinutes(30),
-                signingCredentials: credentials
-            );
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            return tokenHandler.WriteToken(token);
+                var refreshedToken = TokenHelper.GenerateJwtToken(email);
+                result.SetSuccess(refreshedToken);
+                return result;
+            }
+            result.SetException("Token expired");
+            return result;
         }
-
 
         public Maybe<string[]> LoginGoogle(string email, string name, string idToken)
         {
@@ -77,7 +58,7 @@ namespace DorelAppBackend.Services.Implementation
                     dorelDbContext.Users.Add(new DBUserLoginInfoModel() { Email = email, Password = "", Name = name });
                     dorelDbContext.SaveChanges();
                 }
-                response.SetSuccess(new string[] {GenerateJwtToken(email, true), GenerateJwtToken(email) });
+                response.SetSuccess(new string[] {TokenHelper.GenerateJwtToken(email, true), TokenHelper.GenerateJwtToken(email) });
             }
             else
             {
@@ -111,7 +92,7 @@ namespace DorelAppBackend.Services.Implementation
             {
                 var hashPassword = user.Password;
                 if( _passwordHashService.VerifyPassword(password, hashPassword)){
-                    response.SetSuccess(new string[] { GenerateJwtToken(email, true), GenerateJwtToken(email) });
+                    response.SetSuccess(new string[] { TokenHelper.GenerateJwtToken(email, true), TokenHelper.GenerateJwtToken(email) });
                 }
                 else
                 {
