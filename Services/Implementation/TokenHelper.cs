@@ -33,7 +33,7 @@ namespace DorelAppBackend.Services.Implementation
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: isRefreshToken ? DateTime.UtcNow.AddHours(1) : DateTime.UtcNow.AddMinutes(20),
+                expires: isRefreshToken ? DateTime.UtcNow.AddHours(8) : DateTime.UtcNow.AddMinutes(30),
                 signingCredentials: credentials
             );
 
