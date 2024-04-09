@@ -17,6 +17,8 @@ namespace DorelAppBackend.Models.Responses
 
         public int JudetId { get; set; }
 
+        public string JudetName { get; set; }
+
         public double StarsAverage { get; set; }
 
         public Imagine ImagineCover { get; set; }

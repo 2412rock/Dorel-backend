@@ -69,6 +69,15 @@ namespace DorelAppBackend.Controllers
             return Ok(result);
         }
 
+        [AuthorizationFilter]
+        [HttpGet]
+        [Route("api/getServiciiUserAsSearchResults")]
+        public async Task<IActionResult> GetServiciiUserAsSearchResults()
+        {
+            var result = await _dataService.GetServiciiForUserAsSearchResults((string)HttpContext.Items["Email"]);
+            return Ok(result);
+        }
+
         [HttpPost]
         [Route("api/getJudete")]
         public IActionResult GetJudete(StartsWithRequest request)

@@ -83,6 +83,39 @@ namespace DorelAppBackend.Services.Implementation
             return maybe;
         }
 
+        public async Task<Maybe<List<SearchResultResponse>>> GetServiciiForUserAsSearchResults(string email)
+        {
+            var maybe = new Maybe<List<SearchResultResponse>>();
+
+            var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+            {
+                maybe.SetException("User does not exist");
+                return maybe;
+            }
+            var result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.UserID == user.UserID).ToListAsync();
+
+            var listSearchResults = new List<SearchResultResponse>();
+            foreach (var junction in result)
+            {
+
+                var serviciu = await _dorelDbContext.Servicii.FirstOrDefaultAsync(x => x.ID == junction.ServiciuIdID);
+                var judet = await _dorelDbContext.Judete.FirstOrDefaultAsync(x => x.ID == junction.JudetID);
+                var userOfServiciu = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.UserID == junction.UserID);
+
+                if (serviciu != null && userOfServiciu != null && judet != null)
+                {
+                    var imagineCover = await _blobStorageService.DownloadImage(_blobStorageService.GetFileName(userOfServiciu.UserID, serviciu.ID, 0));
+                    var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, JudetName = judet.Name , StarsAverage = 5, ImagineCover = imagineCover, UserId = junction.UserID, ServiciuId = junction.ServiciuIdID, JudetId = junction.JudetID };
+                    listSearchResults.Add(searchResult);
+                }
+            }
+            maybe.SetSuccess(listSearchResults);
+
+            return maybe;
+        }
+
         public async Task<Maybe<string>> AssignServiciu(string userEmail, int serviciuId, int[] judeteIds,string descriere, Imagine[] imagini)
         {
             var response = new Maybe<string>();
@@ -328,6 +361,10 @@ namespace DorelAppBackend.Services.Implementation
             {
                 result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
             }
+            else if(serviciuId == -1 && judetId == -1)
+            {
+                result = await _dorelDbContext.JunctionServiciuJudete.ToListAsync();
+            }
             else
             {
                 maybe.SetException("Invalid query");
@@ -338,12 +375,13 @@ namespace DorelAppBackend.Services.Implementation
             {
 
                 var serviciu = await _dorelDbContext.Servicii.FirstOrDefaultAsync(x => x.ID == junction.ServiciuIdID);
+                var judet = await _dorelDbContext.Judete.FirstOrDefaultAsync(x => x.ID == junction.JudetID);
                 var userOfServiciu = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.UserID == junction.UserID);
 
-                if (serviciu != null && userOfServiciu != null)
+                if (serviciu != null && userOfServiciu != null && judet != null)
                 {
                     var imagineCover = await _blobStorageService.DownloadImage(_blobStorageService.GetFileName(userOfServiciu.UserID, serviciu.ID, 0));
-                    var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, StarsAverage = 5, ImagineCover = imagineCover, UserId = junction.UserID, ServiciuId = junction.ServiciuIdID, JudetId = junction.JudetID };
+                    var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, JudetName = judet.Name ,StarsAverage = 5, ImagineCover = imagineCover, UserId = junction.UserID, ServiciuId = junction.ServiciuIdID, JudetId = junction.JudetID };
                     listSearchResults.Add(searchResult);
                 }
             }
