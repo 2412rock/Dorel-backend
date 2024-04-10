@@ -64,16 +64,24 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false);
 // Add DbContext
 string hostIp = "";
 
-IPAddress[] addresses = Dns.GetHostAddresses("host.docker.internal");
-if (addresses.Length > 0)
+try
 {
-    // we are running in docker
-    hostIp = addresses[0].ToString();
+    IPAddress[] addresses = Dns.GetHostAddresses("host.docker.internal");
+    if (addresses.Length > 0)
+    {
+        // we are running in docker
+        hostIp = addresses[0].ToString();
+    }
 }
-else
+catch 
 {
-    throw new Exception("No local ip found in docker dns");
+    if (String.IsNullOrEmpty(hostIp))
+    {
+        hostIp = "0.0.0.0";
+    }
 }
+
+
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
 
 builder.Services.AddDbContext<DorelDbContext>(options =>
