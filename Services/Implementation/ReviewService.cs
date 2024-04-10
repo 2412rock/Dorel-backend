@@ -17,33 +17,71 @@ namespace DorelAppBackend.Services.Implementation
             _blobStorageService = blobStorageService;
             _loginService = loginService;
         }
+        public async Task<Maybe<string>> DeleteReview(string userEmail, int reviewedUserId, int serviciuId) 
+        {
+            var maybe = new Maybe<string>();
+            var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
 
-        public async Task<Maybe<string>> PostReview(string userEmail, int reviewedUserId, int serviciuId, decimal rating, string description)
+            if (user != null)
+            {
+                var entry = await _dorelDbContext.Reviews.FirstOrDefaultAsync(r => r.ReviewerUserId == user.UserID && r.ReviewedUserId == reviewedUserId && r.ServiciuId == serviciuId);
+                if(entry != null)
+                {
+                    _dorelDbContext.Reviews.Remove(entry);
+                    await _dorelDbContext.SaveChangesAsync();
+                    maybe.SetSuccess("Success");
+                }
+                else
+                {
+                    maybe.SetException("Entry does not exist");
+                }
+
+            }
+            else
+            {
+                maybe.SetException("User does not exist");
+            }
+            return maybe;
+        }
+
+        public async Task<Maybe<string>> PostReview(string userEmail, int reviewedUserId, int serviciuId, decimal rating, string description, bool update = false)
         {
             var maybe = new Maybe<string>();
             var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
             var reviewee = await _dorelDbContext.Users.AnyAsync(u => u.UserID == reviewedUserId);
             if (user != null && reviewee)
             {
-                var entry = await _dorelDbContext.Reviews.AnyAsync(r => r.ReviewerUserId == user.UserID && r.ReviewedUserId == reviewedUserId && r.ServiciuId == serviciuId);
-                if (!entry)
+                var entry = await _dorelDbContext.Reviews.FirstOrDefaultAsync(r => r.ReviewerUserId == user.UserID && r.ReviewedUserId == reviewedUserId && r.ServiciuId == serviciuId);
+
+                var data = new DBReviewModel()
                 {
-                    var data = new DBReviewModel()
-                    {
-                        ReviewerUserId = user.UserID,
-                        ReviewedUserId = reviewedUserId,
-                        ServiciuId = serviciuId,
-                        Rating = rating,
-                        ReviewDescription = description
-                    };
+                    ReviewerUserId = user.UserID,
+                    ReviewedUserId = reviewedUserId,
+                    ServiciuId = serviciuId,
+                    Rating = rating,
+                    ReviewDescription = description
+                };
+                
+                if (entry != null)
+                {
+                    entry.ReviewDescription = description;
+                    entry.Rating = rating;
+                    _dorelDbContext.Reviews.Update(entry);
+                }
+                else if (entry == null)
+                {
                     await _dorelDbContext.Reviews.AddAsync(data);
-                    await _dorelDbContext.SaveChangesAsync();
-                    maybe.SetSuccess("Success");
                 }
                 else
                 {
-                    maybe.SetException("Review already exists");
+                    maybe.SetException("Data already exists");
+                    return maybe;
+
                 }
+
+                await _dorelDbContext.SaveChangesAsync();
+                maybe.SetSuccess("Success");
+
             }
             else
             {
@@ -51,6 +89,8 @@ namespace DorelAppBackend.Services.Implementation
             }
             return maybe;
         }
+
+     
 
         public async Task<Maybe<DBReviewModel[]>> GetReviews(int reviewedUserId, int serviciuId, int pageNumber)
         {
@@ -77,6 +117,21 @@ namespace DorelAppBackend.Services.Implementation
                 maybe.SetException("reviewee does not exist");
             }
             return maybe;
+        }
+        public async Task<Maybe<DBReviewModel>> GetReviewOfUser(int reviewedUserId, int serviciuId, int reviewerId)
+        {
+            var result = new Maybe<DBReviewModel>();
+
+            var review = await _dorelDbContext.Reviews.FirstOrDefaultAsync(r => r.ReviewedUserId == reviewedUserId && r.ReviewerUserId == reviewerId && r.ServiciuId == serviciuId);
+            if(review != null)
+            {
+                result.SetSuccess(review);
+            }
+            else
+            {
+                result.SetSuccess(null);
+            }
+            return result;
         }
     }
 }
