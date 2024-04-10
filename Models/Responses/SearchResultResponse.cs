@@ -22,5 +22,7 @@ namespace DorelAppBackend.Models.Responses
         public double StarsAverage { get; set; }
 
         public Imagine ImagineCover { get; set; }
+
+        public int NumberOfReviews { get; set; }
     }
 }

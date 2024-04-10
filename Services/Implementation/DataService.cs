@@ -379,8 +379,13 @@ namespace DorelAppBackend.Services.Implementation
 
                 if (serviciu != null && userOfServiciu != null && judet != null)
                 {
+                    var reviews = _dorelDbContext.Reviews.Where(r => r.ServiciuId == junction.ServiciuIdID && r.ReviewedUserId == userOfServiciu.UserID);
+                    var numberOfReviews = reviews.Count();
                     var imagineCover = await _blobStorageService.DownloadImage(_blobStorageService.GetFileName(userOfServiciu.UserID, serviciu.ID, 0));
-                    var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, JudetName = judet.Name ,StarsAverage = 5, ImagineCover = imagineCover, UserId = junction.UserID, ServiciuId = junction.ServiciuIdID, JudetId = junction.JudetID };
+                    var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere,
+                        ServiciuName = serviciu.Name, JudetName = judet.Name ,StarsAverage = 5,
+                        ImagineCover = imagineCover, UserId = junction.UserID, ServiciuId = junction.ServiciuIdID,
+                        JudetId = junction.JudetID, NumberOfReviews = numberOfReviews };
                     listSearchResults.Add(searchResult);
                 }
             }
