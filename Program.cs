@@ -64,17 +64,23 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false);
 // Add DbContext
 string hostIp = "";
 
-  IPAddress[] addresses = Dns.GetHostAddresses("host.docker.internal");
+try
+{
+    IPAddress[] addresses = Dns.GetHostAddresses("host.docker.internal");
     if (addresses.Length > 0)
     {
         // we are running in docker
         hostIp = addresses[0].ToString();
     }
-else
-{
-    throw new Exception("Exc");
 }
+catch 
+{
 
+    if (String.IsNullOrEmpty(hostIp))
+    {
+        hostIp = "172.17.0.1";
+    }
+}
 
 
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
