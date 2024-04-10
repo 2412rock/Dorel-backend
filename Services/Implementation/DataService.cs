@@ -373,7 +373,6 @@ namespace DorelAppBackend.Services.Implementation
             var listSearchResults = new List<SearchResultResponse>();
             foreach (var junction in result)
             {
-
                 var serviciu = await _dorelDbContext.Servicii.FirstOrDefaultAsync(x => x.ID == junction.ServiciuIdID);
                 var judet = await _dorelDbContext.Judete.FirstOrDefaultAsync(x => x.ID == junction.JudetID);
                 var userOfServiciu = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.UserID == junction.UserID);

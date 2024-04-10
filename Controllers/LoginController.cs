@@ -30,9 +30,9 @@ namespace DorelAppBackend.Controllers
 
         [HttpPost]
         [Route("api/loginGoogle")]
-        public IActionResult LoginGoogle(LoginGoogleRequest request)
+        public async Task<IActionResult> LoginGoogle(LoginGoogleRequest request)
         {
-            var result = loginService.LoginGoogle(request.Email, request.Name, request.IdToken);
+            var result = await loginService.LoginGoogle(request.Email, request.Name, request.IdToken);
             return Ok(result);
         }
 

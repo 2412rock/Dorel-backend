@@ -47,18 +47,20 @@ namespace DorelAppBackend.Services.Implementation
             return result;
         }
 
-        public Maybe<string[]> LoginGoogle(string email, string name, string idToken)
+        public async Task<Maybe<string[]>> LoginGoogle(string email, string name, string idToken)
         {
             var response = new Maybe<string[]>();
-            var userExists = dorelDbContext.Users.Any(e => e.Email == email);
+            var user = await dorelDbContext.Users.FirstOrDefaultAsync(e => e.Email == email);
             if (VerifyGoogleToken(idToken))
             {
-                if (!userExists)
+                if (user == null)
                 {
-                    dorelDbContext.Users.Add(new DBUserLoginInfoModel() { Email = email, Password = "", Name = name });
+                    await dorelDbContext.Users.AddAsync(new DBUserLoginInfoModel() { Email = email, Password = "", Name = name });
                     dorelDbContext.SaveChanges();
                 }
-                response.SetSuccess(new string[] {TokenHelper.GenerateJwtToken(email, true), TokenHelper.GenerateJwtToken(email) });
+                user = await dorelDbContext.Users.FirstOrDefaultAsync(e => e.Email == email);
+
+                response.SetSuccess(new string[] {TokenHelper.GenerateJwtToken(email, true), TokenHelper.GenerateJwtToken(email), user.UserID.ToString()});
             }
             else
             {
@@ -92,7 +94,7 @@ namespace DorelAppBackend.Services.Implementation
             {
                 var hashPassword = user.Password;
                 if( _passwordHashService.VerifyPassword(password, hashPassword)){
-                    response.SetSuccess(new string[] { TokenHelper.GenerateJwtToken(email, true), TokenHelper.GenerateJwtToken(email) });
+                    response.SetSuccess(new string[] { TokenHelper.GenerateJwtToken(email, true), TokenHelper.GenerateJwtToken(email), user.UserID.ToString() });
                 }
                 else
                 {
