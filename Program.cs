@@ -78,7 +78,7 @@ catch
 
     if (String.IsNullOrEmpty(hostIp))
     {
-        hostIp = "172.17.0.1";
+        hostIp = "10.132.0.2";
     }
 }
 

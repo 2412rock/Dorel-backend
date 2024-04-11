@@ -43,7 +43,7 @@ namespace DorelAppBackend.Services.Implementation
             }
             catch
             {
-                hostIp = "minio-server";
+                hostIp = "10.132.0.2";
             }
 
             return hostIp;
