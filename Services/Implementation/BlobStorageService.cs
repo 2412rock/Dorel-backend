@@ -28,15 +28,22 @@ namespace DorelAppBackend.Services.Implementation
         private string ResolveIp()
         {
             string hostIp;
-            IPAddress[] addresses = Dns.GetHostAddresses("host.docker.internal");
-            if (addresses.Length > 0)
+            try
             {
-                // we are running in docker
-                hostIp = addresses[0].ToString();
+                IPAddress[] addresses = Dns.GetHostAddresses("host.docker.internal");
+                if (addresses.Length > 0)
+                {
+                    // we are running in docker
+                    hostIp = addresses[0].ToString();
+                }
+                else
+                {
+                    throw new Exception("No local ip found in docker dns");
+                }
             }
-            else
+            catch
             {
-                throw new Exception("No local ip found in docker dns");
+                hostIp = "minio-server";
             }
 
             return hostIp;
