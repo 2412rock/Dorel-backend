@@ -32,7 +32,7 @@
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             context.Response.ContentType = "application/json";
 
-            var result = JsonSerializer.Serialize(new { error = exception.Message });
+            var result = JsonSerializer.Serialize(new { error = exception.Message, stackTrace = exception.StackTrace });
             await context.Response.WriteAsync(result);
         }
     }
