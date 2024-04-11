@@ -86,7 +86,7 @@ catch
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
 
 builder.Services.AddDbContext<DorelDbContext>(options =>
-    options.UseSqlServer($"Server=sql-server,1433;Database=DorelDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
+    options.UseSqlServer($"Server={hostIp},1433;Database=DorelDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
 
 
 var app = builder.Build();
