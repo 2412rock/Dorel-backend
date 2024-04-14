@@ -69,12 +69,11 @@ namespace DorelAppBackend.Controllers
             return Ok(result);
         }
 
-        [AuthorizationFilter]
         [HttpGet]
         [Route("api/getAllJunctions")]
-        public IActionResult GetAllJunctions()
+        public async Task<IActionResult> GetAllJunctions()
         {
-            var result = _dataService.GetAllJunctions();
+            var result = await _dataService.GetAllJunctions();
             return Ok(result);
         }
 
