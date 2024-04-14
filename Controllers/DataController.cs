@@ -71,6 +71,15 @@ namespace DorelAppBackend.Controllers
 
         [AuthorizationFilter]
         [HttpGet]
+        [Route("api/getAllJunctions")]
+        public IActionResult GetAllJunctions()
+        {
+            var result = _dataService.GetAllJunctions();
+            return Ok(result);
+        }
+
+        [AuthorizationFilter]
+        [HttpGet]
         [Route("api/getServiciiUserAsSearchResults")]
         public async Task<IActionResult> GetServiciiUserAsSearchResults()
         {

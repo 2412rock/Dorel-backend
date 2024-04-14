@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Minio.Exceptions;
 using Newtonsoft.Json.Linq;
 using System.Runtime.ConstrainedExecution;
+using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace DorelAppBackend.Services.Implementation
@@ -393,8 +394,12 @@ namespace DorelAppBackend.Services.Implementation
                 }
             }
             maybe.SetSuccess(listSearchResults);
-
             return maybe;
+        }
+
+        public async Task<List<JunctionServiciuJudete>> GetAllJunctions()
+        {
+            return await _dorelDbContext.JunctionServiciuJudete.ToListAsync();
         }
 
         public async Task<Maybe<List<Imagine>>> GetImaginiForServiciuOfUser(int serviciuId, int judetId, int userId)
