@@ -34,7 +34,7 @@ builder.WebHost.UseKestrel(options =>
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -43,9 +43,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigin",
         builder =>
         {
-            builder.AllowAnyOrigin()
+            builder.WithOrigins("http://localhost")
                    .AllowAnyHeader()
-                   .AllowAnyMethod();
+                   .AllowAnyMethod().AllowCredentials();
         });
 });
 
@@ -60,7 +60,8 @@ builder.Services.AddTransient<IReviewService, ReviewService>();
 
 // Add configuration
 builder.Configuration.AddJsonFile("appsettings.json", optional: false);
-
+builder.Services.AddControllers();
+builder.Services.AddSignalR();
 // Add DbContext
 string hostIp = "";
 
@@ -94,6 +95,8 @@ var app = builder.Build();
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors("AllowSpecificOrigin");
 // Configure the HTTP request pipeline.
+
+app.MapHub<ChatHub>("/chatHub").RequireCors("AllowSpecificOrigin");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
