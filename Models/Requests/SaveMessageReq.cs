@@ -2,7 +2,7 @@
 {
     public class SaveMessageReq
     {
-        public string ReceipientEmail { get; set; }
+        public int ReceipientId { get; set; }
         public string Message { get; set; }
     }
 }

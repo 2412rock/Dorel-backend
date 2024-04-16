@@ -22,14 +22,14 @@ namespace DorelAppBackend.Controllers
         [AuthorizationFilter]
         public async Task<IActionResult> SaveMessage([FromBody] SaveMessageReq req)
         {
-            var result = await _chatService.SaveMessage((string)HttpContext.Items["Email"], req.ReceipientEmail, req.Message);
+            var result = await _chatService.SaveMessage((string)HttpContext.Items["Email"], req.ReceipientId, req.Message);
             return Ok(result);
         }
 
         [HttpGet]
         [Route("api/getMessages")]
         [AuthorizationFilter]
-        public async Task<IActionResult> SaveMessage()
+        public async Task<IActionResult> GetMessages()
         {
             var result = await _chatService.GetMessages((string)HttpContext.Items["Email"]);
             return Ok(result);

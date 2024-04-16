@@ -14,14 +14,14 @@ namespace DorelAppBackend.Services.Implementation
             _dorelDbContext = dorelDbContext;
         }
 
-        public async Task<Maybe<string>> SaveMessage(string email, string receiptEmila, string message)
+        public async Task<Maybe<string>> SaveMessage(string email, int receiptId, string message)
         {
             var result = new Maybe<string>();
             var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
-            var receipt = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.Email == receiptEmila);
-            if (user != null && receipt != null)
+            //var receipt = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.Email == receiptEmila);
+            if (user != null)
             {
-                var dbModel = new DBMessage() { SenderId= user.UserID, ReceipientId = receipt.UserID, Message = message, SentTime = DateTime.Now };
+                var dbModel = new DBMessage() { SenderId= user.UserID, ReceipientId = receiptId, Message = message, SentTime = DateTime.Now };
     
                await _dorelDbContext.Messages.AddAsync(dbModel);
                 try

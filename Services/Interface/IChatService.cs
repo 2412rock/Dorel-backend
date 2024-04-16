@@ -6,7 +6,7 @@ namespace DorelAppBackend.Services.Interface
 {
     public interface IChatService
     {
-        public Task<Maybe<string>> SaveMessage(string email, string receiptEmila, string message);
+        public Task<Maybe<string>> SaveMessage(string email, int receiptId, string message);
 
         public Task<Maybe<List<Group>>> GetMessages(string email);
     }
