@@ -4,8 +4,11 @@ namespace DorelAppBackend.Services.Implementation
 {
     public class ChatHub : Hub
     {
+        private DorelDbContext _dorelDbContext;
+
         public async Task SendMessage(string fromUser, string toUser, string message)
         {
+
             await Clients.All.SendAsync($"{toUser}",fromUser, message);
         }
 

@@ -57,6 +57,7 @@ builder.Services.AddTransient<IPasswordHashService, PasswordHashService>();
 builder.Services.AddTransient<IDataService, DataService>();
 builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 builder.Services.AddTransient<IReviewService, ReviewService>();
+builder.Services.AddTransient<IChatService, ChatService>();
 
 // Add configuration
 builder.Configuration.AddJsonFile("appsettings.json", optional: false);

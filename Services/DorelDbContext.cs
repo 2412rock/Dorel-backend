@@ -18,6 +18,8 @@ namespace DorelAppBackend.Services
 
         public DbSet<DBReviewModel> Reviews { get; set; }
 
+        public DbSet<DBMessage> Messages { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<JunctionServiciuJudete>().HasKey(j => new { j.UserID, j.ServiciuIdID, j.JudetID });

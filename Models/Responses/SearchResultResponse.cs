@@ -9,6 +9,8 @@ namespace DorelAppBackend.Models.Responses
 
         public int UserId { get; set; }
 
+        public string UserEmail { get; set; }
+
         public string Descriere { get; set; }
 
         public string ServiciuName { get; set; }

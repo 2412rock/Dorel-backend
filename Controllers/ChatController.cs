@@ -1,12 +1,38 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DorelAppBackend.Filters;
+using DorelAppBackend.Models.Requests;
+using DorelAppBackend.Services;
+using DorelAppBackend.Services.Interface;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DorelAppBackend.Controllers
 {
+    [ApiController]
     public class ChatController : ControllerBase
     {
-        public IActionResult Index()
+        private readonly IChatService _chatService;
+
+        public ChatController(IChatService chatService)
         {
-            return Ok();
+            _chatService = chatService;
+        }
+
+
+        [HttpPost]
+        [Route("api/saveMessage")]
+        [AuthorizationFilter]
+        public async Task<IActionResult> SaveMessage([FromBody] SaveMessageReq req)
+        {
+            var result = await _chatService.SaveMessage((string)HttpContext.Items["Email"], req.ReceipientEmail, req.Message);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Route("api/getMessages")]
+        [AuthorizationFilter]
+        public async Task<IActionResult> SaveMessage()
+        {
+            var result = await _chatService.GetMessages((string)HttpContext.Items["Email"]);
+            return Ok(result);
         }
     }
 }
