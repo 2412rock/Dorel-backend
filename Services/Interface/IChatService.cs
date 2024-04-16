@@ -9,5 +9,9 @@ namespace DorelAppBackend.Services.Interface
         public Task<Maybe<string>> SaveMessage(string email, int receiptId, string message);
 
         public Task<Maybe<List<Group>>> GetMessages(string email);
+
+        public Task<Maybe<string>> SeenMessage(string email);
+
+        public Task<Maybe<bool>> HasUnseenMessages(string email);
     }
 }

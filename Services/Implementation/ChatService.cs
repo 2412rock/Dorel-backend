@@ -14,6 +14,46 @@ namespace DorelAppBackend.Services.Implementation
             _dorelDbContext = dorelDbContext;
         }
 
+        public async Task<Maybe<string>> SeenMessage(string email)
+        {
+            var result = new Maybe<string>();
+            var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if(user != null)
+            {
+                var messages = _dorelDbContext.Messages.Where(x => x.ReceipientId == user.UserID);
+                foreach (var message in messages)
+                {
+                    message.Seen = true;
+                    _dorelDbContext.Messages.Update(message);
+                }
+
+                await _dorelDbContext.SaveChangesAsync();
+                result.SetSuccess("Seen ");
+            }
+            else
+            {
+                result.SetException("No user found");
+            }
+
+            return result;
+        }
+
+        public async Task<Maybe<bool>> HasUnseenMessages(string email)
+        {
+            var result = new Maybe<bool>();
+            var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if(user != null)
+            {
+                var exists = await _dorelDbContext.Messages.AnyAsync(x => (x.Seen == null || x.Seen == false) && x.ReceipientId == user.UserID);
+                result.SetSuccess(exists);
+            }
+            else
+            {
+                result.SetException("No user found");
+            }
+            return result;
+        }
+
         public async Task<Maybe<string>> SaveMessage(string email, int receiptId, string message)
         {
             var result = new Maybe<string>();

@@ -34,5 +34,23 @@ namespace DorelAppBackend.Controllers
             var result = await _chatService.GetMessages((string)HttpContext.Items["Email"]);
             return Ok(result);
         }
+
+        [HttpPost]
+        [Route("api/seenMessage")]
+        [AuthorizationFilter]
+        public async Task<IActionResult> SeenMessage()
+        {
+            var result = await _chatService.SeenMessage((string)HttpContext.Items["Email"]);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Route("api/hasUnseenMessages")]
+        [AuthorizationFilter]
+        public async Task<IActionResult> HasUnseenMessages()
+        {
+            var result = await _chatService.HasUnseenMessages((string)HttpContext.Items["Email"]);
+            return Ok(result);
+        }
     }
 }
