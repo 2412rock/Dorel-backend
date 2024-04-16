@@ -57,11 +57,12 @@ namespace DorelAppBackend.Services.Implementation
                     {
                         var messages = new List<Message>();
                         messages.Add(new Message() { MessageText = mesajTrimis.Message, Receipt = mesajTrimis.ReceipientId, SenderId = mesajTrimis.SenderId });
-                        groups.Add(new Group() { WithUser = mesajTrimis.ReceipientId, messages = messages });
+                        var withUserName = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.UserID == mesajTrimis.ReceipientId);
+                        groups.Add(new Group() { WithUser = mesajTrimis.ReceipientId, WithUserName = withUserName.Name, Messages = messages });
                     }
                     else
                     {
-                        group.messages.Add(new Message() { SenderId = user.UserID, Receipt = mesajTrimis.ReceipientId, MessageText = mesajTrimis.Message });
+                        group.Messages.Add(new Message() { SenderId = user.UserID, Receipt = mesajTrimis.ReceipientId, MessageText = mesajTrimis.Message });
                     }
                 }
                 foreach (var mesajPrimit in mesajePrimite)
@@ -71,12 +72,12 @@ namespace DorelAppBackend.Services.Implementation
                     {
                         var messages = new List<Message>();
                         messages.Add(new Message() { MessageText = mesajPrimit.Message, Receipt = user.UserID, SenderId = mesajPrimit.SenderId });
-
-                        groups.Add(new Group() { WithUser = mesajPrimit.SenderId, messages = messages });
+                        var withUserName = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.UserID == mesajPrimit.SenderId);
+                        groups.Add(new Group() { WithUser = mesajPrimit.SenderId, Messages = messages, WithUserName = withUserName.Name });
                     }
                     else
                     {
-                        group.messages.Add(new Message() { SenderId = mesajPrimit.SenderId, Receipt = user.UserID, MessageText = mesajPrimit.Message });
+                        group.Messages.Add(new Message() { SenderId = mesajPrimit.SenderId, Receipt = user.UserID, MessageText = mesajPrimit.Message });
 
                     }
                 }
@@ -94,7 +95,9 @@ namespace DorelAppBackend.Services.Implementation
     {
         public int WithUser { get; set; }
 
-        public List<Message> messages { get; set; }
+        public string WithUserName { get; set; }
+
+        public List<Message> Messages { get; set; }
     }
 
     public class Message
