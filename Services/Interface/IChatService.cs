@@ -10,8 +10,8 @@ namespace DorelAppBackend.Services.Interface
 
         public Task<Maybe<List<Group>>> GetMessages(string email);
 
-        public Task<Maybe<string>> SeenMessage(string email);
+        public Task<Maybe<string>> SeenMessage(string email, int senderId);
 
-        public Task<Maybe<bool>> HasUnseenMessages(string email);
+        public Task<Maybe<List<int>>> HasUnseenMessages(string email);
     }
 }

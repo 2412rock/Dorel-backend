@@ -38,9 +38,9 @@ namespace DorelAppBackend.Controllers
         [HttpPost]
         [Route("api/seenMessage")]
         [AuthorizationFilter]
-        public async Task<IActionResult> SeenMessage()
+        public async Task<IActionResult> SeenMessage([FromBody] SeenRequest req)
         {
-            var result = await _chatService.SeenMessage((string)HttpContext.Items["Email"]);
+            var result = await _chatService.SeenMessage((string)HttpContext.Items["Email"], req.SenderId);
             return Ok(result);
         }
 

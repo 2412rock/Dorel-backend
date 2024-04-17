@@ -14,13 +14,13 @@ namespace DorelAppBackend.Services.Implementation
             _dorelDbContext = dorelDbContext;
         }
 
-        public async Task<Maybe<string>> SeenMessage(string email)
+        public async Task<Maybe<string>> SeenMessage(string email, int senderId)
         {
             var result = new Maybe<string>();
             var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
             if(user != null)
             {
-                var messages = _dorelDbContext.Messages.Where(x => x.ReceipientId == user.UserID);
+                var messages = _dorelDbContext.Messages.Where(x => x.ReceipientId == user.UserID && x.SenderId == senderId);
                 foreach (var message in messages)
                 {
                     message.Seen = true;
@@ -38,14 +38,22 @@ namespace DorelAppBackend.Services.Implementation
             return result;
         }
 
-        public async Task<Maybe<bool>> HasUnseenMessages(string email)
+        public async Task<Maybe<List<int>>> HasUnseenMessages(string email)
         {
-            var result = new Maybe<bool>();
+            var result = new Maybe<List<int>>();
             var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
             if(user != null)
             {
-                var exists = await _dorelDbContext.Messages.AnyAsync(x => (x.Seen == null || x.Seen == false) && x.ReceipientId == user.UserID);
-                result.SetSuccess(exists);
+                var notSeenMessags = await _dorelDbContext.Messages.Where(x => (x.Seen == null || x.Seen == false) && x.ReceipientId == user.UserID).ToListAsync();
+                var notSeenMessagesFrom = new List<int>();
+                foreach(var message in notSeenMessags)
+                {
+                    if(!notSeenMessagesFrom.Any(x => x == message.SenderId))
+                    {
+                        notSeenMessagesFrom.Add(message.SenderId);
+                    }
+                }
+                result.SetSuccess(notSeenMessagesFrom);
             }
             else
             {

@@ -2,6 +2,6 @@
 {
     public class SeenRequest
     {
-        public int ChatWithUserId { get; set; }
+        public int SenderId { get; set; }
     }
 }
