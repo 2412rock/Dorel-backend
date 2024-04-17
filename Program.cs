@@ -115,7 +115,7 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors("AllowDorelOrigin");
 // Configure the HTTP request pipeline.
 
-app.MapHub<ChatHub>("/chatHub").RequireCors("AllowSpecificOrigin");
+app.MapHub<ChatHub>("/chatHub").RequireCors("AllowDorelOrigin");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
