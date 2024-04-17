@@ -349,7 +349,7 @@ namespace DorelAppBackend.Services.Implementation
             const int PAGE_SIZE = 20;
             var maybe = new Maybe<List<SearchResultResponse>>();
             List<JunctionServiciuJudete> result;
-            Console.WriteLine("First step ----------");
+
             if (serviciuId != -1 && judetId != -1) 
             {
                 result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.JudetID == judetId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
@@ -388,7 +388,7 @@ namespace DorelAppBackend.Services.Implementation
                     var imagineCover = await _blobStorageService.DownloadImage(_blobStorageService.GetFileName(userOfServiciu.UserID, serviciu.ID, 0));
                     var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere,
                         ServiciuName = serviciu.Name, JudetName = judet.Name ,StarsAverage = 5,
-                        ImagineCover = imagineCover, UserId = junction.UserID, ServiciuId = junction.ServiciuIdID,
+                        ImagineCover = imagineCover, UserId = junction.UserID, UserEmail = userOfServiciu.Email, ServiciuId = junction.ServiciuIdID,
                         JudetId = junction.JudetID, NumberOfReviews = numberOfReviews };
                     listSearchResults.Add(searchResult);
                 }
