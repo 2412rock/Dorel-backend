@@ -89,20 +89,20 @@ namespace DorelAppBackend.Services.Implementation
             if(user != null)
             {
                 var mesajeTrimise = await _dorelDbContext.Messages.Where(msg => msg.SenderId == user.UserID && msg.ReceipientId != user.UserID).ToArrayAsync();
-                var mesajePrimite = await _dorelDbContext.Messages.Where(msg => msg.SenderId != user.UserID && msg.ReceipientId == user.UserID).OrderByDescending(msg => msg.SentTime).ToArrayAsync();
+                var mesajePrimite = await _dorelDbContext.Messages.Where(msg => msg.SenderId != user.UserID && msg.ReceipientId == user.UserID).ToArrayAsync();
                 foreach(var mesajTrimis in mesajeTrimise)
                 {
                     var group = groups.FirstOrDefault(e => e.WithUser == mesajTrimis.ReceipientId);
                     if (group == null)
                     {
                         var messages = new List<Message>();
-                        messages.Add(new Message() { MessageText = mesajTrimis.Message, Receipt = mesajTrimis.ReceipientId, SenderId = mesajTrimis.SenderId });
+                        messages.Add(new Message() { MessageText = mesajTrimis.Message, Receipt = mesajTrimis.ReceipientId, SenderId = mesajTrimis.SenderId, SentTime = mesajTrimis.SentTime });
                         var withUserName = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.UserID == mesajTrimis.ReceipientId);
                         groups.Add(new Group() { WithUser = mesajTrimis.ReceipientId, WithUserName = withUserName.Name, Messages = messages });
                     }
                     else
                     {
-                        group.Messages.Add(new Message() { SenderId = user.UserID, Receipt = mesajTrimis.ReceipientId, MessageText = mesajTrimis.Message });
+                        group.Messages.Add(new Message() { SenderId = user.UserID, Receipt = mesajTrimis.ReceipientId, MessageText = mesajTrimis.Message, SentTime = mesajTrimis.SentTime });
                     }
                 }
                 foreach (var mesajPrimit in mesajePrimite)
@@ -111,15 +111,20 @@ namespace DorelAppBackend.Services.Implementation
                     if (group == null)
                     {
                         var messages = new List<Message>();
-                        messages.Add(new Message() { MessageText = mesajPrimit.Message, Receipt = user.UserID, SenderId = mesajPrimit.SenderId });
+                        messages.Add(new Message() { MessageText = mesajPrimit.Message, Receipt = user.UserID, SenderId = mesajPrimit.SenderId, SentTime = mesajPrimit.SentTime });
                         var withUserName = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.UserID == mesajPrimit.SenderId);
                         groups.Add(new Group() { WithUser = mesajPrimit.SenderId, Messages = messages, WithUserName = withUserName.Name });
                     }
                     else
                     {
-                        group.Messages.Add(new Message() { SenderId = mesajPrimit.SenderId, Receipt = user.UserID, MessageText = mesajPrimit.Message });
+                        group.Messages.Add(new Message() { SenderId = mesajPrimit.SenderId, Receipt = user.UserID, MessageText = mesajPrimit.Message, SentTime = mesajPrimit.SentTime });
 
                     }
+                }
+                foreach(var group in groups)
+                {
+                    var messagesSorted = group.Messages.OrderBy(msg => msg.SentTime).ToList();
+                    group.Messages = messagesSorted;
                 }
                 result.SetSuccess(groups);
             }
@@ -146,5 +151,7 @@ namespace DorelAppBackend.Services.Implementation
 
         public int Receipt { get; set; }
         public string MessageText { get; set; }
+
+        public DateTime SentTime { get; set; }
     }
 }
