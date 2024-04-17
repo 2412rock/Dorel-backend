@@ -55,6 +55,14 @@ builder.Services.AddCors(options =>
                    .AllowAnyMethod();
         });
 
+    options.AddPolicy("AllowDorelOrigin",
+        builder =>
+        {
+            builder.WithOrigins("https://dorelapp.xyz")
+                   .AllowAnyHeader()
+                   .AllowAnyMethod();
+        });
+
 });
 
 builder.Services.AddTransient<ILoginService, LoginService>();
@@ -102,8 +110,9 @@ builder.Services.AddDbContext<DorelDbContext>(options =>
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
-app.UseCors("AllowSpecificOrigin");
+//app.UseCors("AllowSpecificOrigin");
 //app.UseCors("AllowAnyOrigin");
+app.UseCors("AllowDorelOrigin");
 // Configure the HTTP request pipeline.
 
 app.MapHub<ChatHub>("/chatHub").RequireCors("AllowSpecificOrigin");
