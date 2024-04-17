@@ -60,7 +60,7 @@ builder.Services.AddCors(options =>
         {
             builder.WithOrigins("https://dorelapp.xyz")
                    .AllowAnyHeader()
-                   .AllowAnyMethod();
+                   .AllowAnyMethod().AllowCredentials();
         });
 
 });
@@ -112,7 +112,7 @@ var app = builder.Build();
 app.UseMiddleware<ExceptionMiddleware>();
 //app.UseCors("AllowSpecificOrigin");
 //app.UseCors("AllowAnyOrigin");
-app.UseCors("AllowSpecificOrigin");
+app.UseCors("AllowDorelOrigin");
 // Configure the HTTP request pipeline.
 
 app.MapHub<ChatHub>("/chatHub").RequireCors("AllowSpecificOrigin");
