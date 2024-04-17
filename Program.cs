@@ -112,7 +112,7 @@ var app = builder.Build();
 app.UseMiddleware<ExceptionMiddleware>();
 //app.UseCors("AllowSpecificOrigin");
 //app.UseCors("AllowAnyOrigin");
-app.UseCors("AllowDorelOrigin");
+app.UseCors("AllowSpecificOrigin");
 // Configure the HTTP request pipeline.
 
 app.MapHub<ChatHub>("/chatHub").RequireCors("AllowSpecificOrigin");
