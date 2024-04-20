@@ -25,7 +25,7 @@ builder.WebHost.UseKestrel(options =>
             // local
             listenOptions.UseHttps("C:/Users/Adi/Desktop/certs/backendcertificate.pfx");
         }
-        
+
     });
 });
 
@@ -91,7 +91,7 @@ try
         hostIp = addresses[0].ToString();
     }
 }
-catch 
+catch
 {
 
     if (String.IsNullOrEmpty(hostIp))
@@ -110,12 +110,12 @@ builder.Services.AddDbContext<DorelDbContext>(options =>
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
+//app.UseCors("AllowSpecificOrigin");
+//app.UseCors("AllowAnyOrigin");
+app.UseCors("AllowDorelOrigin");
+// Configure the HTTP request pipeline.
 
-/*app.UseCors("AllowDorelOrigin");
-app.MapHub<ChatHub>("/chatHub").RequireCors("AllowDorelOrigin");*/
-
-app.UseCors("AllowSpecificOrigin");
-app.MapHub<ChatHub>("/chatHub").RequireCors("AllowSpecificOrigin");
+app.MapHub<ChatHub>("/chatHub").RequireCors("AllowDorelOrigin");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
