@@ -19,5 +19,7 @@ namespace DorelAppBackend.Services.Interface
 
         public Task<Maybe<string>> ResetPassword(string email, string verificationCode, string password);
 
+        public Task<Maybe<string>> DeleteAccount(string email);
+
     }
 }

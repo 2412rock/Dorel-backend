@@ -1,4 +1,5 @@
 ﻿using DorelAppBackend.Enums;
+using DorelAppBackend.Filters;
 using DorelAppBackend.Models.DbModels;
 using DorelAppBackend.Models.Requests;
 using DorelAppBackend.Models.Responses;
@@ -75,6 +76,16 @@ namespace DorelAppBackend.Controllers
         public async Task<IActionResult> ResetPassword([FromBody] PasswordResetReq req)
         {
             var result = await loginService.ResetPassword(req.Email, req.Code, req.Password);
+
+            return Ok(result);
+        }
+
+        [HttpDelete]
+        [AuthorizationFilter]
+        [Route("api/deleteAccount")]
+        public async Task<IActionResult> DeleteAccount()
+        {
+            var result = await loginService.DeleteAccount((string)HttpContext.Items["Email"]);
 
             return Ok(result);
         }

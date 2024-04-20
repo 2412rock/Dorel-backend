@@ -7,6 +7,7 @@ using DorelAppBackend.Services.Interface;
 using Google.Apis.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Minio.Exceptions;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -21,16 +22,19 @@ namespace DorelAppBackend.Services.Implementation
         private readonly IRedisCacheService _redisCacheService;
         private readonly IMailService _mailService;
         private readonly IPasswordHashService _passwordHashService;
+        private readonly IBlobStorageService _blobStorageService;
 
         public LoginService(DorelDbContext dorelDbContext,
             IRedisCacheService redisCacheService,
             IMailService mailService,
-            IPasswordHashService passwordHashService)
+            IPasswordHashService passwordHashService,
+            IBlobStorageService blobStorageService)
         {
             _redisCacheService = redisCacheService;
             _mailService = mailService;
             _passwordHashService = passwordHashService;
             this.dorelDbContext = dorelDbContext;
+            _blobStorageService = blobStorageService;
         }
 
         public Maybe<string> RefreshToken(string token)
@@ -241,6 +245,57 @@ namespace DorelAppBackend.Services.Implementation
         public void DeleteVerification(string email)
         {
             _redisCacheService.RemoveValueFromCache(email);
+        }
+
+        private void DiscardDbChanges()
+        {
+            foreach (var entry in dorelDbContext.ChangeTracker.Entries().ToList())
+            {
+                entry.State = EntityState.Detached;
+            }
+        }
+
+        public async Task<Maybe<string>> DeleteAccount(string email)
+        {
+            var result = new Maybe<string>();
+            var user = await dorelDbContext.Users.FirstOrDefaultAsync(e => e.Email == email);
+            if (user != null)
+            {
+                var junctions = dorelDbContext.JunctionServiciuJudete.Where(e => e.UserID == user.UserID);
+
+                foreach(var junction in junctions)
+                {
+                    var pictureIndex = 0;
+                    while (true)
+                    {
+                        try
+                        {
+                            await _blobStorageService.DeleteImage(_blobStorageService.GetFileName(user.UserID, junction.ServiciuIdID, pictureIndex));
+                        }
+                        catch (ObjectNotFoundException e)
+                        {
+                            break;
+                        }
+                        catch 
+                        {
+                            result.SetException("Something went wrong while deleting your data");
+                            DiscardDbChanges();
+                            return result;
+                        }
+                        pictureIndex++;
+                    }
+                    
+                    dorelDbContext.JunctionServiciuJudete.Remove(junction);
+                }
+                dorelDbContext.Users.Remove(user);
+                await dorelDbContext.SaveChangesAsync();
+                result.SetSuccess("Ok");
+            }
+            else
+            {
+                result.SetException("User does not exist");
+            }
+            return result;
         }
     }
 }
