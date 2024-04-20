@@ -110,12 +110,12 @@ builder.Services.AddDbContext<DorelDbContext>(options =>
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
-//app.UseCors("AllowSpecificOrigin");
-//app.UseCors("AllowAnyOrigin");
-app.UseCors("AllowDorelOrigin");
-// Configure the HTTP request pipeline.
 
-app.MapHub<ChatHub>("/chatHub").RequireCors("AllowDorelOrigin");
+/*app.UseCors("AllowDorelOrigin");
+app.MapHub<ChatHub>("/chatHub").RequireCors("AllowDorelOrigin");*/
+
+app.UseCors("AllowSpecificOrigin");
+app.MapHub<ChatHub>("/chatHub").RequireCors("AllowSpecificOrigin");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

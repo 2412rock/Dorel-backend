@@ -12,10 +12,10 @@ using Microsoft.EntityFrameworkCore;
 namespace DorelAppBackend.Controllers
 {
     [ApiController]
-    public class LoginController : ControllerBase
+    public class AuthController : ControllerBase
     {
         private ILoginService loginService;
-        public LoginController(ILoginService loginService)
+        public AuthController(ILoginService loginService)
         {
             this.loginService = loginService;
         }
@@ -56,8 +56,25 @@ namespace DorelAppBackend.Controllers
         [Route("api/verifyUser")]
         public IActionResult VerifyUser([FromBody] VerifyUserRequest request)
         {
-            Console.WriteLine("GOT REQUEST TO VERIFY USER");
             var result = loginService.VerifyUser(request.Email, request.VerificationCode);
+
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Route("api/setResetPasswordCode")]
+        public async Task<IActionResult> SetResetPasswordCode([FromBody] PasswordResetCodeReq request)
+        {
+            var result = await loginService.SendPasswordResetVerificationCode(request.Email);
+
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Route("api/resetPassword")]
+        public async Task<IActionResult> ResetPassword([FromBody] PasswordResetReq req)
+        {
+            var result = await loginService.ResetPassword(req.Email, req.Code, req.Password);
 
             return Ok(result);
         }

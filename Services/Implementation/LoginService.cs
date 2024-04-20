@@ -109,6 +109,7 @@ namespace DorelAppBackend.Services.Implementation
             return response;
         }
 
+
         public Maybe<string> VerifyUser(string email, string verificationCode)
         {
             var result = new Maybe<string>();
@@ -149,6 +150,42 @@ namespace DorelAppBackend.Services.Implementation
 
             return result;
         }
+         
+        public async Task<Maybe<string>> ResetPassword(string email, string verificationCode, string password)
+        {
+            var result = new Maybe<string>();
+            var redisValue = _redisCacheService.GetValueFromCache(email);
+
+            if (redisValue != null)
+            {
+                if(redisValue == verificationCode)
+                {                    
+                    var hashedPasswd = _passwordHashService.HashPassword(password);
+                    var user = await dorelDbContext.Users.FirstOrDefaultAsync(e => e.Email == email);
+                    if(user != null)
+                    {
+                        user.Password = hashedPasswd;
+                        dorelDbContext.Update(user);
+                        await dorelDbContext.SaveChangesAsync();
+                        result.SetSuccess("Ok");
+                    }
+                    else
+                    {
+                        result.SetException("User does not exist");
+                    }
+
+                }
+                else
+                {
+                    result.SetException("Code invalid");
+                }
+            }
+            else
+            {
+                result.SetException("Code invalid");
+            }
+            return result;
+        }
 
         public async Task<Maybe<string>> SendVerification(string email, string password, string name)
         {
@@ -185,6 +222,19 @@ namespace DorelAppBackend.Services.Implementation
 
                 result.SetException(ex.Message);
             }
+            return result;
+        }
+
+        public async Task<Maybe<string>> SendPasswordResetVerificationCode(string email)
+        {
+            if(await dorelDbContext.Users.AnyAsync(e => e.Email == email))
+            {
+                var verificationCode = new Random().Next(1000, 9999).ToString();
+                _redisCacheService.SetValueInCache(email, verificationCode);
+                _mailService.SendMailToUser(verificationCode, email);
+            }
+            var result = new Maybe<string>();
+            result.SetSuccess("Ok");
             return result;
         }
 

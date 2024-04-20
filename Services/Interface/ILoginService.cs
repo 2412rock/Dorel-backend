@@ -15,5 +15,9 @@ namespace DorelAppBackend.Services.Interface
 
         public Maybe<string> RefreshToken(string token);
 
+        public Task<Maybe<string>> SendPasswordResetVerificationCode(string email);
+
+        public Task<Maybe<string>> ResetPassword(string email, string verificationCode, string password);
+
     }
 }
