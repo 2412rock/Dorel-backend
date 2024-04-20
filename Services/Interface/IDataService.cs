@@ -28,5 +28,7 @@ namespace DorelAppBackend.Services.Interface
         public Task<Maybe<List<Imagine>>> GetImaginiForServiciuOfUser(int serviciuId, int judetId, int userId);
 
         public Task<Maybe<List<SearchResultResponse>>> GetServiciiForUserAsSearchResults(string email);
+
+        public Task<Maybe<List<string>>> GetAllUsers();
     }
 }

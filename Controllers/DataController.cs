@@ -43,6 +43,15 @@ namespace DorelAppBackend.Controllers
             return Ok(result);
         }
 
+        [HttpGet]
+        [AuthorizationFilter]
+        [Route("api/getAllUsers")]
+        public async Task<IActionResult> GetAllUsers([FromQuery] int serviciuId, int judetId, int pageNumber)
+        {
+            var result = await _dataService.GetAllUsers();
+            return Ok(result);
+        }
+
         [AuthorizationFilter]
         [HttpGet]
         [Route("api/getDescriereForServiciu")]

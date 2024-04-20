@@ -498,5 +498,13 @@ namespace DorelAppBackend.Services.Implementation
                 pictureIndex++;
             }
         }
+
+        public async Task<Maybe<List<string>>> GetAllUsers()
+        {
+            var result = new Maybe<List<string>>();
+            var users = await _dorelDbContext.Users.Select(x => x.Email).ToListAsync();
+            result.SetSuccess(users);
+            return result;
+        }
     }
 }
