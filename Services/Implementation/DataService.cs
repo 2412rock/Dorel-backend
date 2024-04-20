@@ -29,7 +29,7 @@ namespace DorelAppBackend.Services.Implementation
             var result = new Maybe<DBJudetModel[]>();
             if(startsWith.Trim() == "")
             {
-                result.SetSuccess(_dorelDbContext.Judete.ToArray());
+                result.SetSuccess(_dorelDbContext.Judete.Take(4).ToArray());
             }
             else
             {
@@ -43,7 +43,7 @@ namespace DorelAppBackend.Services.Implementation
             var result = new Maybe<DBServiciuModel[]>();
             if (startsWith.Trim() == "")
             {
-                result.SetSuccess(_dorelDbContext.Servicii.ToArray());
+                result.SetSuccess(_dorelDbContext.Servicii.Take(4).ToArray());
             }
             else
             {
