@@ -101,7 +101,7 @@ namespace DorelAppBackend.Services.Implementation
             return false;
         }
 
-        public Maybe<string[]> LoginUser(string email, string password)
+        public async Task<Maybe<string[]>> LoginUser(string email, string password)
         {
             var response = new Maybe<string[]>();
             var user = dorelDbContext.Users.Where(e => e.Email == email).FirstOrDefault();
@@ -109,7 +109,17 @@ namespace DorelAppBackend.Services.Implementation
             {
                 var hashPassword = user.Password;
                 if( _passwordHashService.VerifyPassword(password, hashPassword)){
-                    response.SetSuccess(new string[] { TokenHelper.GenerateJwtToken(email, true), TokenHelper.GenerateJwtToken(email), user.UserID.ToString() });
+                    user = await dorelDbContext.Users.FirstOrDefaultAsync(e => e.Email == email);
+                    if(user != null)
+                    {
+                        var isAdmin = user.IsAdmin == true;
+                        response.SetSuccess(new string[] { TokenHelper.GenerateJwtToken(email, true), TokenHelper.GenerateJwtToken(email, isAdmin: isAdmin), user.UserID.ToString() });
+                    }
+                    else
+                    {
+                        response.SetException("User not found");
+                    }
+                    
                 }
                 else
                 {
