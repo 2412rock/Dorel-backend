@@ -23,9 +23,9 @@ namespace DorelAppBackend.Controllers
 
         [HttpPost]
         [Route("api/refreshToken")]
-        public IActionResult LoginGoogle([FromBody] RefreshRequest request)
+        public async Task<IActionResult> LoginGoogle([FromBody] RefreshRequest request)
         {
-            var result = loginService.RefreshToken(request.RefreshToken);
+            var result = await loginService.RefreshToken(request.RefreshToken);
             return Ok(result);
         }
 

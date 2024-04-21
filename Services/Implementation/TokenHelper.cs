@@ -8,7 +8,7 @@ namespace DorelAppBackend.Services.Implementation
 {
     public static class TokenHelper
     {
-        public static string GenerateJwtToken(string userEmail, bool isRefreshToken = false)
+        public static string GenerateJwtToken(string userEmail, bool isRefreshToken = false, bool isAdmin = false)
         {
             var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET");
             byte[] bytes = Encoding.UTF8.GetBytes(secretKey);
@@ -22,7 +22,8 @@ namespace DorelAppBackend.Services.Implementation
                 new Claim(JwtRegisteredClaimNames.Sub, userEmail), // User identifier from Google
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique JWT ID
                 new Claim(JwtRegisteredClaimNames.Iss, issuer), // Token issuer
-                new Claim(JwtRegisteredClaimNames.Aud, audience), // Token audience
+                new Claim(JwtRegisteredClaimNames.Aud, audience),
+                new Claim("Role", isAdmin ? "admin" : "user")// Token audience
             } : new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userEmail),
@@ -58,6 +59,25 @@ namespace DorelAppBackend.Services.Implementation
                 }
             }
             return null;
+        }
+
+        public static bool IsAdmin(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
+
+            if (jsonToken != null)
+            {
+                // Extract token claims
+                foreach (var claim in jsonToken.Claims)
+                {
+                    if (claim.Type == "Role")
+                    {
+                        return claim.Value == "admin";
+                    }
+                }
+            }
+            return false;
         }
 
         public static bool IsTokenExpired(string tokenString)

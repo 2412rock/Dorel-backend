@@ -10,6 +10,7 @@ namespace DorelAppBackend.Filters
 {
     public class AuthorizationFilter : Attribute, IAuthorizationFilter
     {
+        public string? Role { get; set; }
         public void OnAuthorization(AuthorizationFilterContext context)
         {
             StringValues authorizationHeaderValues;
@@ -19,6 +20,14 @@ namespace DorelAppBackend.Filters
                 if (!string.IsNullOrWhiteSpace(authorizationHeader) && authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                 {
                     string token = authorizationHeader.Substring("Bearer ".Length).Trim();
+                    if(Role == "admin")
+                    {
+                        if (!TokenHelper.IsAdmin(token))
+                        {
+                            context.Result = new StatusCodeResult(401);
+                            return;
+                        }
+                    }
                     var email = TokenHelper.GetEmailFromToken(token);
                     if (TokenHelper.IsTokenExpired(token))
                     {

@@ -30,7 +30,7 @@ namespace DorelAppBackend.Controllers
         }
 
         [HttpGet]
-        [AuthorizationFilter]
+        [AuthorizationFilter(Role= "admin")]
         [Route("api/getLogs")]
         public async Task<IActionResult> GetLogs()
         {

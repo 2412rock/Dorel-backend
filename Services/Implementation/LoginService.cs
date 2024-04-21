@@ -37,15 +37,26 @@ namespace DorelAppBackend.Services.Implementation
             _blobStorageService = blobStorageService;
         }
 
-        public Maybe<string> RefreshToken(string token)
+        public async Task<Maybe<string>> RefreshToken(string token)
         {
             var email = TokenHelper.GetEmailFromToken(token);
             var result = new Maybe<string>();
             if (!TokenHelper.IsTokenExpired(token) && email != null)
             {
-                var refreshedToken = TokenHelper.GenerateJwtToken(email);
-                result.SetSuccess(refreshedToken);
-                return result;
+                var user = await dorelDbContext.Users.FirstOrDefaultAsync(e => e.Email == email);
+                if(user != null)
+                {
+                    var isAdmin = user.IsAdmin == true;
+                    var refreshedToken = TokenHelper.GenerateJwtToken(email, isAdmin: isAdmin);
+                    result.SetSuccess(refreshedToken);
+                    return result;
+                }
+                else
+                {
+                    result.SetException("User does not exist");
+                    return result;
+                }
+                
             }
             result.SetException("Token expired");
             return result;
@@ -63,8 +74,8 @@ namespace DorelAppBackend.Services.Implementation
                     dorelDbContext.SaveChanges();
                 }
                 user = await dorelDbContext.Users.FirstOrDefaultAsync(e => e.Email == email);
-
-                response.SetSuccess(new string[] {TokenHelper.GenerateJwtToken(email, true), TokenHelper.GenerateJwtToken(email), user.UserID.ToString()});
+                var isAdmin = user.IsAdmin == true;
+                response.SetSuccess(new string[] {TokenHelper.GenerateJwtToken(email, true), TokenHelper.GenerateJwtToken(email, isAdmin: isAdmin), user.UserID.ToString()});
             }
             else
             {
