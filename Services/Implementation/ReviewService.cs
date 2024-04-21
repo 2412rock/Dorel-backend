@@ -29,12 +29,29 @@ namespace DorelAppBackend.Services.Implementation
                 {
                     _dorelDbContext.Reviews.Remove(entry);
                     await _dorelDbContext.SaveChangesAsync();
-                    maybe.SetSuccess("Success");
                 }
                 else
                 {
                     maybe.SetException("Entry does not exist");
+                    return maybe;
                 }
+                // Update the rating after deletion
+                var reviews = await _dorelDbContext.Reviews.Where(x => x.ReviewedUserId == reviewedUserId && x.ServiciuId == serviciuId).ToListAsync();
+                decimal average = 0;
+                foreach(var review in reviews)
+                {
+                    average += review.Rating;
+                }
+                average = average / reviews.Count();
+                var junctions = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.UserID == reviewedUserId).ToListAsync();
+                foreach(var junction in junctions)
+                {
+                    junction.Rating = average;
+                    _dorelDbContext.JunctionServiciuJudete.Update(junction);
+                }
+
+                await _dorelDbContext.SaveChangesAsync();
+                maybe.SetSuccess("Ok");
 
             }
             else
@@ -78,6 +95,29 @@ namespace DorelAppBackend.Services.Implementation
                     return maybe;
 
                 }
+
+                var junctions = _dorelDbContext.JunctionServiciuJudete.Where(e => e.UserID == reviewedUserId && e.ServiciuIdID == serviciuId);
+                if (junctions.Any())
+                {
+                    var reviews = await _dorelDbContext.Reviews.Where(e => e.ReviewedUserId == reviewedUserId).ToListAsync();
+                    var average = rating;
+                    foreach(var review in reviews)
+                    {
+                        average += review.Rating;
+                    }
+                    if (reviews.Any())
+                    {
+                        average = average / (reviews.Count() +1) ;
+                    }
+
+
+                    foreach (var junction in junctions)
+                    {
+                        junction.Rating = average;
+                        _dorelDbContext.JunctionServiciuJudete.Update(junction);
+                    }
+                }
+                
 
                 await _dorelDbContext.SaveChangesAsync();
                 maybe.SetSuccess("Success");
