@@ -4,11 +4,14 @@ using DorelAppBackend.Models.DbModels;
 using DorelAppBackend.Models.Requests;
 using DorelAppBackend.Models.Responses;
 using DorelAppBackend.Services;
+using DorelAppBackend.Services.Implementation;
 using DorelAppBackend.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Primitives;
+using StackExchange.Redis;
 
 namespace DorelAppBackend.Controllers
 {
@@ -87,6 +90,40 @@ namespace DorelAppBackend.Controllers
         {
             var result = await loginService.DeleteAccount((string)HttpContext.Items["Email"]);
 
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Route("api/isAdmin")]
+        public async Task<IActionResult> UserIsAdmin()
+        {
+            var result = new Maybe<bool>();
+            StringValues authorizationHeaderValues;
+            if (HttpContext.Request.Headers.TryGetValue("Authorization", out authorizationHeaderValues))
+            {
+                string authorizationHeader = authorizationHeaderValues.FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(authorizationHeader) && authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                {
+                    string token = authorizationHeader.Substring("Bearer ".Length).Trim();
+
+                    if (TokenHelper.IsAdmin(token))
+                    {
+                        result.SetSuccess(true);
+                    }
+                    else
+                    {
+                        result.SetSuccess(false);
+                    }
+                }
+                else
+                {
+                    result.SetSuccess(false);
+                }
+            }
+            else
+            {
+                result.SetSuccess(false);
+            }
             return Ok(result);
         }
     }
