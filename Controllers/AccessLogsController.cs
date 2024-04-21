@@ -1,4 +1,5 @@
-﻿using DorelAppBackend.Models.Requests;
+﻿using DorelAppBackend.Filters;
+using DorelAppBackend.Models.Requests;
 using DorelAppBackend.Services.Implementation;
 using DorelAppBackend.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +27,17 @@ namespace DorelAppBackend.Controllers
 
             return Ok();
            
+        }
+
+        [HttpGet]
+        [AuthorizationFilter]
+        [Route("api/getLogs")]
+        public async Task<IActionResult> GetLogs()
+        {
+            var result = await _accessLogsService.GetLogs();
+
+            return Ok(result);
+
         }
     }
 }
