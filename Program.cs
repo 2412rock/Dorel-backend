@@ -40,7 +40,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigin",
+    options.AddPolicy("AllowLocalHost",
         builder =>
         {
             builder.WithOrigins("http://localhost")
@@ -74,6 +74,7 @@ builder.Services.AddTransient<IDataService, DataService>();
 builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 builder.Services.AddTransient<IReviewService, ReviewService>();
 builder.Services.AddTransient<IChatService, ChatService>();
+builder.Services.AddTransient<IAccessLogsService, AccessLogsService>();
 
 // Add configuration
 builder.Configuration.AddJsonFile("appsettings.json", optional: false);
@@ -110,12 +111,13 @@ builder.Services.AddDbContext<DorelDbContext>(options =>
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
-//app.UseCors("AllowSpecificOrigin");
-//app.UseCors("AllowAnyOrigin");
+//app.UseCors("AllowLocalHost");
+
 app.UseCors("AllowDorelOrigin");
 // Configure the HTTP request pipeline.
 
 app.MapHub<ChatHub>("/chatHub").RequireCors("AllowDorelOrigin");
+//app.MapHub<ChatHub>("/chatHub").RequireCors("AllowLocalHost");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

@@ -20,6 +20,8 @@ namespace DorelAppBackend.Services
 
         public DbSet<DBMessage> Messages { get; set; }
 
+        public DbSet<DBAccessLog> AccessLogs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<JunctionServiciuJudete>().HasKey(j => new { j.UserID, j.ServiciuIdID, j.JudetID });
