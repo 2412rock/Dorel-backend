@@ -39,9 +39,9 @@ namespace DorelAppBackend.Controllers
 
         [HttpPost]
         [Route("api/login")]
-        public IActionResult Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            var response = loginService.LoginUser(request.Email, request.Password);
+            var response = await loginService.LoginUser(request.Email, request.Password);
             return Ok(response);
         }
 
