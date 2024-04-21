@@ -15,7 +15,17 @@ namespace DorelAppBackend.Services.Implementation
 
         public async Task AddLog(string ipAddress)
         {
-            await _dbContext.AccessLogs.AddAsync(new Models.DbModels.DBAccessLog() { AccessTime = DateTime.Now, IpAddress = ipAddress });
+            var existingLog = await _dbContext.AccessLogs.FirstOrDefaultAsync(e => e.IpAddress == ipAddress);
+            if (existingLog == null)
+            {
+                await _dbContext.AccessLogs.AddAsync(new Models.DbModels.DBAccessLog() { AccessTime = DateTime.Now, IpAddress = ipAddress });
+
+            }
+            else
+            {
+                existingLog.AccessTime = DateTime.Now;
+                _dbContext.AccessLogs.Update(existingLog);
+            }
             await _dbContext.SaveChangesAsync();
         }
 
