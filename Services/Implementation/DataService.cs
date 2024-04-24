@@ -52,14 +52,14 @@ namespace DorelAppBackend.Services.Implementation
             return result;
         }
 
-        public Maybe<DBServiciuModel[]> GetServiciiForUser(string email)
+        public Maybe<DBServiciuModel[]> GetServiciiForUser(string email, bool ofer)
         {
             var maybe = new Maybe<DBServiciuModel[]>();
             var user = _dorelDbContext.Users.Where(user => user.Email == email).FirstOrDefault();
             if(user != null)
             {
                 var serviciiIds = _dorelDbContext.JunctionServiciuJudete
-                .Where(jsj => jsj.UserID == user.UserID)
+                .Where(jsj => jsj.UserID == user.UserID && jsj.Ofer == ofer)
                 .Select(jsj => jsj.ServiciuIdID)
                 .ToList();
 
@@ -84,7 +84,7 @@ namespace DorelAppBackend.Services.Implementation
             return maybe;
         }
 
-        public async Task<Maybe<List<SearchResultResponse>>> GetServiciiForUserAsSearchResults(string email)
+        public async Task<Maybe<List<SearchResultResponse>>> GetServiciiForUserAsSearchResults(string email, bool ofer)
         {
             var maybe = new Maybe<List<SearchResultResponse>>();
 
@@ -95,7 +95,7 @@ namespace DorelAppBackend.Services.Implementation
                 maybe.SetException("User does not exist");
                 return maybe;
             }
-            var result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.UserID == user.UserID).ToListAsync();
+            var result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.UserID == user.UserID && x.Ofer == ofer).ToListAsync();
 
             var listSearchResults = new List<SearchResultResponse>();
             foreach (var junction in result)
@@ -107,8 +107,8 @@ namespace DorelAppBackend.Services.Implementation
 
                 if (serviciu != null && userOfServiciu != null && judet != null)
                 {
-                    var imagineCover = await _blobStorageService.DownloadImage(_blobStorageService.GetFileName(userOfServiciu.UserID, serviciu.ID, 0));
-                    var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, JudetName = judet.Name , StarsAverage = 5, ImagineCover = imagineCover, UserId = junction.UserID, ServiciuId = junction.ServiciuIdID, JudetId = junction.JudetID };
+                    var imagineCover = await _blobStorageService.DownloadImage(_blobStorageService.GetFileName(userOfServiciu.UserID, serviciu.ID, ofer,0));
+                    var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, JudetName = judet.Name , StarsAverage = 5, ImagineCover = imagineCover, UserId = junction.UserID, ServiciuId = junction.ServiciuIdID, JudetId = junction.JudetID, Ofer = ofer };
                     listSearchResults.Add(searchResult);
                 }
             }
@@ -117,7 +117,7 @@ namespace DorelAppBackend.Services.Implementation
             return maybe;
         }
 
-        public async Task<Maybe<string>> AssignServiciu(string userEmail, int serviciuId, int[] judeteIds,string descriere, Imagine[] imagini)
+        public async Task<Maybe<string>> AssignServiciu(string userEmail, int serviciuId, int[] judeteIds,string descriere, Imagine[] imagini, bool ofer)
         {
             var response = new Maybe<string>();
             if(imagini.Length > 10 && descriere.Length > 250)
@@ -129,7 +129,7 @@ namespace DorelAppBackend.Services.Implementation
             var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
             if(user != null)
             {
-                var junctionExists = _dorelDbContext.JunctionServiciuJudete.Any(e => e.UserID == user.UserID && e.ServiciuIdID == serviciuId);
+                var junctionExists = _dorelDbContext.JunctionServiciuJudete.Any(e => e.UserID == user.UserID && e.ServiciuIdID == serviciuId && e.Ofer == ofer);
                 if (!junctionExists)
                 {
                     foreach (var judetId in judeteIds)
@@ -140,6 +140,7 @@ namespace DorelAppBackend.Services.Implementation
                             ServiciuIdID = serviciuId,
                             JudetID = judetId,
                             Descriere = descriere,
+                            Ofer = ofer
                         };
                         _dorelDbContext.JunctionServiciuJudete.Add(junction);
                     }
@@ -148,8 +149,16 @@ namespace DorelAppBackend.Services.Implementation
                 {
                     response.SetException("Serviciu already added");
                 }
-                await _dorelDbContext.SaveChangesAsync();
-                await PublishImagesForServiciu(imagini, serviciuId, user);
+                try
+                {
+                    await _dorelDbContext.SaveChangesAsync();
+                }
+                catch (Exception e)
+                {
+                    throw;
+                }
+                
+                await PublishImagesForServiciu(imagini, serviciuId, user, ofer);
             }
             else
             {
@@ -159,7 +168,7 @@ namespace DorelAppBackend.Services.Implementation
             return response;
         }
 
-        public async Task<Maybe<string>> EditServiciu(string userEmail, int serviciuId, int[] judeteIds, string descriere, Imagine[] imagini)
+        public async Task<Maybe<string>> EditServiciu(string userEmail, int serviciuId, int[] judeteIds, string descriere, Imagine[] imagini, bool ofer)
         {
             var response = new Maybe<string>();
             response.SetSuccess("Ok");
@@ -182,6 +191,7 @@ namespace DorelAppBackend.Services.Implementation
                             ServiciuIdID = serviciuId,
                             JudetID = judetId,
                             Descriere = descriere,
+                            Ofer = ofer
                         };
                         var judetEntryExists = _dorelDbContext.JunctionServiciuJudete.Any(e => e.JudetID == judetId && e.UserID == user.UserID && e.ServiciuIdID == serviciuId);
                         if (judetEntryExists)
@@ -220,24 +230,50 @@ namespace DorelAppBackend.Services.Implementation
             return response;
         }
 
-        public Maybe<string> DeleteUserServiciu(string userEmail, int serviciuId) 
+        private async Task DeletePictures(DBUserLoginInfoModel user, JunctionServiciuJudete junction, bool ofer)
+        {
+            var pictureIndex = 0;
+            while (true)
+            {
+                try
+                {
+                    await _blobStorageService.DeleteImage(_blobStorageService.GetFileName(user.UserID, junction.ServiciuIdID, ofer, pictureIndex));
+                }
+                catch (ObjectNotFoundException e)
+                {
+                    break;
+                }
+                catch
+                {
+                    throw;
+                }
+                pictureIndex++;
+            }
+        }
+
+        public async Task<Maybe<string>> DeleteUserServiciu(string userEmail, int serviciuId, bool ofer) 
         {
             var response = new Maybe<string>();
             response.SetSuccess("Ok");
             var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
             if (user != null)
             {
-                var junctionRows = _dorelDbContext.JunctionServiciuJudete.Where(e => e.UserID == user.UserID && e.ServiciuIdID == serviciuId);
-                if (junctionRows.Count() > 0)
+                var junctionRows = await _dorelDbContext.JunctionServiciuJudete.Where(e => e.UserID == user.UserID && e.ServiciuIdID == serviciuId && e.Ofer == ofer).ToListAsync();
+                foreach (var junctionRow in junctionRows)
                 {
-                    _dorelDbContext.JunctionServiciuJudete.RemoveRange(junctionRows);
-                    _dorelDbContext.SaveChanges();
-                    response.SetSuccess("Success deleting serviciu for user");
+                    try
+                    {
+                        await DeletePictures(user, junctionRow, ofer);
+                    }
+                    catch(Exception e)
+                    {
+                        response.SetException("Something went wrong deleting data");
+                        DiscardDbChanges();
+                        return response;
+                    }
                 }
-                else
-                {
-                    response.SetException("No serviciu found to delte");
-                }
+                _dorelDbContext.JunctionServiciuJudete.RemoveRange(junctionRows);
+                await _dorelDbContext.SaveChangesAsync();
             }
             else
             {
@@ -254,7 +290,7 @@ namespace DorelAppBackend.Services.Implementation
             }
         }
 
-        public async Task<Maybe<List<Imagine>>> GetImaginiServiciuUser(int serviciuId, string userEmail)
+        public async Task<Maybe<List<Imagine>>> GetImaginiServiciuUser(int serviciuId, string userEmail, bool ofer)
         {
             var imgList = new List<Imagine>();
             var maybe = new Maybe<List<Imagine>>();
@@ -266,7 +302,7 @@ namespace DorelAppBackend.Services.Implementation
                 {
                     try
                     {
-                        var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, pictureIndex);
+                        var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, ofer,pictureIndex);
                         var img = await _blobStorageService.DownloadImage(fileName);
                         imgList.Add(img);
                         pictureIndex++;
@@ -287,38 +323,6 @@ namespace DorelAppBackend.Services.Implementation
             return maybe;
         }
 
-        public async Task<Maybe<List<Imagine>>> GetImaginiServiciu(int serviciuId, int judetId,string userEmail)
-        {
-            var imgList = new List<Imagine>();
-            var maybe = new Maybe<List<Imagine>>();
-            var pictureIndex = 0;
-            var user = _dorelDbContext.Users.FirstOrDefault(u => u.Email == userEmail);
-            if (user != null)
-            {
-                while (true)
-                {
-                    try
-                    {
-                        var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, pictureIndex);
-                        var img = await _blobStorageService.DownloadImage(fileName);
-                        imgList.Add(img);
-                        pictureIndex++;
-                    }
-                    catch (ObjectNotFoundException e)
-                    {
-                        maybe.SetSuccess(imgList);
-                        return maybe;
-                    }
-                    catch (Exception e)
-                    {
-                        maybe.SetException($"Something went wrong downloading images {e.Message}");
-                        return maybe;
-                    }
-                }
-            }
-            maybe.SetException("No user found");
-            return maybe;
-        }
 
         public Maybe<List<DBJudetModel>> GetJudeteForServiciu(int serviciuId, string userEmail)
         {
@@ -344,7 +348,7 @@ namespace DorelAppBackend.Services.Implementation
             return maybe;
         }
 
-        public async Task<Maybe<List<SearchResultResponse>>> GetServiciiForJudet(int serviciuId, int judetId, int pageNumber)
+        public async Task<Maybe<List<SearchResultResponse>>> GetServiciiForJudet(int serviciuId, int judetId, int pageNumber, bool ofer)
         {
             const int PAGE_SIZE = 20;
             var maybe = new Maybe<List<SearchResultResponse>>();
@@ -352,28 +356,28 @@ namespace DorelAppBackend.Services.Implementation
 
             if (serviciuId != -1 && judetId != -1) 
             {
-                result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.JudetID == judetId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
+                result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.JudetID == judetId && x.Ofer == ofer).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
 
             }
             else if(judetId != -1)
             {
-                result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.JudetID == judetId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
+                result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.JudetID == judetId && x.Ofer == ofer).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
             }
             else if(serviciuId != -1)
             {
-                result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
+                result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.Ofer == ofer).Skip(pageNumber * PAGE_SIZE).Take(PAGE_SIZE).ToListAsync();
             }
             else if(serviciuId == -1 && judetId == -1)
             {
                 Console.WriteLine("Getting data");
-                result = await _dorelDbContext.JunctionServiciuJudete.ToListAsync();
+                result = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.Ofer == ofer).ToListAsync();
             }
             else
             {
                 maybe.SetException("Invalid query");
                 return maybe;
             }
-            Console.WriteLine("Begin building search result");
+
             var listSearchResults = new List<SearchResultResponse>();
             foreach (var junction in result)
             {
@@ -385,8 +389,8 @@ namespace DorelAppBackend.Services.Implementation
                 {
                     var reviews = _dorelDbContext.Reviews.Where(r => r.ServiciuId == junction.ServiciuIdID && r.ReviewedUserId == userOfServiciu.UserID);
                     var numberOfReviews = reviews.Count();
-                    var imagineCover = await _blobStorageService.DownloadImage(_blobStorageService.GetFileName(userOfServiciu.UserID, serviciu.ID, 0));
-                    var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere,
+                    var imagineCover = await _blobStorageService.DownloadImage(_blobStorageService.GetFileName(userOfServiciu.UserID, serviciu.ID, ofer,0));
+                    var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere, Ofer = ofer,
                         ServiciuName = serviciu.Name, JudetName = judet.Name ,StarsAverage = junction.Rating != null ? (decimal)junction.Rating : 5,
                         ImagineCover = imagineCover, UserId = junction.UserID, UserEmail = userOfServiciu.Email, ServiciuId = junction.ServiciuIdID,
                         JudetId = junction.JudetID, NumberOfReviews = numberOfReviews };
@@ -404,7 +408,7 @@ namespace DorelAppBackend.Services.Implementation
             return await _dorelDbContext.JunctionServiciuJudete.ToListAsync();
         }
 
-        public async Task<Maybe<List<Imagine>>> GetImaginiForServiciuOfUser(int serviciuId, int judetId, int userId)
+        public async Task<Maybe<List<Imagine>>> GetImaginiForServiciuOfUser(int serviciuId, int judetId, int userId, bool ofer)
         {
             var maybe = new Maybe<List<Imagine>>();
             var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.UserID == userId);
@@ -419,7 +423,7 @@ namespace DorelAppBackend.Services.Implementation
                     {
                         try
                         {
-                            var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, pictureIndex);
+                            var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, ofer,pictureIndex);
                             var imagine = await _blobStorageService.DownloadImage(fileName);
                             imagini.Add(imagine);
                             pictureIndex++;
@@ -466,7 +470,7 @@ namespace DorelAppBackend.Services.Implementation
         }
 
 
-        private async Task PublishImagesForServiciu(Imagine[] imagini, int serviciuId, DBUserLoginInfoModel user, bool edit=false)
+        private async Task PublishImagesForServiciu(Imagine[] imagini, int serviciuId, DBUserLoginInfoModel user, bool ofer,bool edit=false)
         {
             var pictureIndex = 0;
             if (edit)
@@ -474,7 +478,7 @@ namespace DorelAppBackend.Services.Implementation
                 //remove all pictures for serviciu
                 while (true)
                 {
-                    var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, pictureIndex);
+                    var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, ofer, pictureIndex);
                     try
                     {
                         await _blobStorageService.DeleteImage(fileName);
@@ -495,7 +499,7 @@ namespace DorelAppBackend.Services.Implementation
             pictureIndex = 0;
             foreach (var imagine in imagini)
             {
-                var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, pictureIndex);
+                var fileName = _blobStorageService.GetFileName(user.UserID, serviciuId, ofer,pictureIndex);
                 await _blobStorageService.UploadImage(fileName, imagine.FileType, imagine.FileContentBase64);
                 pictureIndex++;
             }

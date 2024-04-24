@@ -26,5 +26,7 @@ namespace DorelAppBackend.Models.Responses
         public Imagine ImagineCover { get; set; }
 
         public int NumberOfReviews { get; set; }
+
+        public bool Ofer { get; set; }
     }
 }

@@ -6,5 +6,7 @@
         public int[] JudeteIds { get; set; }
         public Imagine[] Imagini { get; set; }
         public string Descriere { get; set; }
+
+        public bool Ofer { get; set; }
     }
 }

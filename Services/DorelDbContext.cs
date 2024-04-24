@@ -24,7 +24,7 @@ namespace DorelAppBackend.Services
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<JunctionServiciuJudete>().HasKey(j => new { j.UserID, j.ServiciuIdID, j.JudetID });
+          
 
         }
     }

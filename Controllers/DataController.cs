@@ -20,9 +20,9 @@ namespace DorelAppBackend.Controllers
         [AuthorizationFilter]
         [HttpGet]
         [Route("api/getImaginiForServiciu")]
-        public async Task<IActionResult> GetImaginiForServiciu([FromQuery] int serviciuId)
+        public async Task<IActionResult> GetImaginiForServiciu([FromQuery] int serviciuId, bool ofer)
         {
-            var result = await _dataService.GetImaginiServiciuUser(serviciuId, (string)HttpContext.Items["Email"]);
+            var result = await _dataService.GetImaginiServiciuUser(serviciuId, (string)HttpContext.Items["Email"], ofer);
             return Ok(result);
         }
 
@@ -37,9 +37,9 @@ namespace DorelAppBackend.Controllers
 
         [HttpGet]
         [Route("api/getSearchResult")]
-        public async Task<IActionResult> GetSearchResult([FromQuery] int serviciuId, int judetId, int pageNumber)
+        public async Task<IActionResult> GetSearchResult([FromQuery] int serviciuId, int judetId, int pageNumber, bool ofer)
         {
-            var result = await _dataService.GetServiciiForJudet(serviciuId, judetId, pageNumber);
+            var result = await _dataService.GetServiciiForJudet(serviciuId, judetId, pageNumber, ofer);
             return Ok(result);
         }
 
@@ -63,18 +63,18 @@ namespace DorelAppBackend.Controllers
 
         [HttpGet]
         [Route("api/getImaginiServiciuUser")]
-        public async Task<IActionResult> GetImaginiServiciuUser([FromQuery] int serviciuId, int judetId, int userId)
+        public async Task<IActionResult> GetImaginiServiciuUser([FromQuery] int serviciuId, int judetId, int userId, bool ofer)
         {
-            var result = await _dataService.GetImaginiForServiciuOfUser(serviciuId, judetId, userId);
+            var result = await _dataService.GetImaginiForServiciuOfUser(serviciuId, judetId, userId, ofer);
             return Ok(result);
         }
 
         [AuthorizationFilter]
         [HttpGet]
         [Route("api/getServiciiUser")]
-        public IActionResult GetServiciiUser()
+        public IActionResult GetServiciiUser([FromQuery] bool ofer)
         {
-            var result = _dataService.GetServiciiForUser((string)HttpContext.Items["Email"]);
+            var result = _dataService.GetServiciiForUser((string)HttpContext.Items["Email"], ofer);
             return Ok(result);
         }
 
@@ -89,9 +89,9 @@ namespace DorelAppBackend.Controllers
         [AuthorizationFilter]
         [HttpGet]
         [Route("api/getServiciiUserAsSearchResults")]
-        public async Task<IActionResult> GetServiciiUserAsSearchResults()
+        public async Task<IActionResult> GetServiciiUserAsSearchResults([FromQuery] bool ofer)
         {
-            var result = await _dataService.GetServiciiForUserAsSearchResults((string)HttpContext.Items["Email"]);
+            var result = await _dataService.GetServiciiForUserAsSearchResults((string)HttpContext.Items["Email"], ofer);
             return Ok(result);
         }
 
@@ -116,7 +116,7 @@ namespace DorelAppBackend.Controllers
         [Route("api/assignUserServiciiAndJudet")]
         public async Task<IActionResult> AssignUserServicii(AssignRequest request)
         {
-            var result = await _dataService.AssignServiciu((string)HttpContext.Items["Email"], request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini);
+            var result = await _dataService.AssignServiciu((string)HttpContext.Items["Email"], request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini, request.Ofer);
             return Ok(result);
         }
 
@@ -125,16 +125,16 @@ namespace DorelAppBackend.Controllers
         [Route("api/editUserServiciu")]
         public async Task<IActionResult> EditUserServiciu(AssignRequest request)
         {
-            var result = await _dataService.EditServiciu((string)HttpContext.Items["Email"], request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini);
+            var result = await _dataService.EditServiciu((string)HttpContext.Items["Email"], request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini, request.Ofer);
             return Ok(result);
         }
 
         [AuthorizationFilter]
         [HttpDelete]
         [Route("api/deleteUserServiciu")]
-        public IActionResult DeleteUserServiciu([FromQuery] int serviciuId)
+        public async Task<IActionResult> DeleteUserServiciu([FromQuery] int serviciuId, bool ofer)
         {
-            var result =  _dataService.DeleteUserServiciu((string)HttpContext.Items["Email"], serviciuId);
+            var result =  await _dataService.DeleteUserServiciu((string)HttpContext.Items["Email"], serviciuId, ofer);
             return Ok(result);
         }
     }

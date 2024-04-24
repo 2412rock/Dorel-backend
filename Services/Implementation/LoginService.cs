@@ -276,6 +276,27 @@ namespace DorelAppBackend.Services.Implementation
             }
         }
 
+        private async Task DeletePictures(DBUserLoginInfoModel user, JunctionServiciuJudete junction, bool ofer)
+        {
+            var pictureIndex = 0;
+            while (true)
+            {
+                try
+                {
+                    await _blobStorageService.DeleteImage(_blobStorageService.GetFileName(user.UserID, junction.ServiciuIdID, ofer, pictureIndex));
+                }
+                catch (ObjectNotFoundException e)
+                {
+                    break;
+                }
+                catch
+                {
+                    throw;
+                }
+                pictureIndex++;
+            }
+        }
+
         public async Task<Maybe<string>> DeleteAccount(string email)
         {
             var result = new Maybe<string>();
@@ -286,24 +307,16 @@ namespace DorelAppBackend.Services.Implementation
 
                 foreach(var junction in junctions)
                 {
-                    var pictureIndex = 0;
-                    while (true)
+                    try
                     {
-                        try
-                        {
-                            await _blobStorageService.DeleteImage(_blobStorageService.GetFileName(user.UserID, junction.ServiciuIdID, pictureIndex));
-                        }
-                        catch (ObjectNotFoundException e)
-                        {
-                            break;
-                        }
-                        catch 
-                        {
-                            result.SetException("Something went wrong while deleting your data");
-                            DiscardDbChanges();
-                            return result;
-                        }
-                        pictureIndex++;
+                        await DeletePictures(user, junction, true);
+                        await DeletePictures(user, junction, false);
+                    }
+                    catch(Exception e)
+                    {
+                        result.SetException("Something went wrong while deleting your data");
+                        DiscardDbChanges();
+                        return result;
                     }
                     
                     dorelDbContext.JunctionServiciuJudete.Remove(junction);

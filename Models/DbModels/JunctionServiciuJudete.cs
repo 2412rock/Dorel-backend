@@ -1,9 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DorelAppBackend.Models.DbModels
 {
     public class JunctionServiciuJudete
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int ID { get; set; }
         public int UserID { get; set; }
         public int ServiciuIdID { get; set; }
 
@@ -13,5 +17,6 @@ namespace DorelAppBackend.Models.DbModels
 
         public decimal? Rating { get; set; }
 
+        public bool Ofer { get; set; }
     }
 }

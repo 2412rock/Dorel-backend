@@ -20,9 +20,9 @@ namespace DorelAppBackend.Services.Implementation
             SetupMinio();
         }
 
-        public string GetFileName(int userID, int serviciuId, int pictureIndex)
+        public string GetFileName(int userID, int serviciuId, bool ofer,int pictureIndex)
         {
-            return $"{userID}-{serviciuId}-{pictureIndex}";
+            return $"{userID}-{serviciuId}-{ofer}-{pictureIndex}";
         }
 
         private string ResolveIp()
