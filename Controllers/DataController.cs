@@ -63,9 +63,9 @@ namespace DorelAppBackend.Controllers
 
         [HttpGet]
         [Route("api/getImaginiServiciuUser")]
-        public async Task<IActionResult> GetImaginiServiciuUser([FromQuery] int serviciuId, int judetId, int userId, bool ofer)
+        public async Task<IActionResult> GetImaginiServiciuUser([FromQuery] int serviciuId, int userId, bool ofer)
         {
-            var result = await _dataService.GetImaginiForServiciuOfUser(serviciuId, judetId, userId, ofer);
+            var result = await _dataService.GetImaginiForServiciuOfUser(serviciuId, userId, ofer);
             return Ok(result);
         }
 
