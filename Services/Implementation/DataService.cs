@@ -414,7 +414,7 @@ namespace DorelAppBackend.Services.Implementation
             var user = await _dorelDbContext.Users.FirstOrDefaultAsync(u => u.UserID == userId);
             if (user != null)
             {
-                var result = await _dorelDbContext.JunctionServiciuJudete.FirstOrDefaultAsync(x => x.ServiciuIdID == serviciuId && x.JudetID == judetId && x.UserID == userId);
+                var result = await _dorelDbContext.JunctionServiciuJudete.FirstOrDefaultAsync(x => x.ServiciuIdID == serviciuId && x.JudetID == judetId && x.UserID == userId && x.Ofer == ofer);
                 var imagini = new List<Imagine>();
                 if(result != null)
                 {
