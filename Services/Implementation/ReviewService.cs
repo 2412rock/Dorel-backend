@@ -42,7 +42,11 @@ namespace DorelAppBackend.Services.Implementation
                 {
                     average += review.Rating;
                 }
-                average = average / reviews.Count();
+                if(reviews.Count > 0)
+                {
+                    average = average / reviews.Count();
+                }
+                
                 var junctions = await _dorelDbContext.JunctionServiciuJudete.Where(x => x.ServiciuIdID == serviciuId && x.UserID == reviewedUserId).ToListAsync();
                 foreach(var junction in junctions)
                 {
