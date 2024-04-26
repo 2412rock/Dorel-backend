@@ -18,5 +18,7 @@ namespace DorelAppBackend.Models.DbModels
         public decimal? Rating { get; set; }
 
         public bool Ofer { get; set; }
+        public string? Phone { get; set; }
+        public string? Email { get; set; }
     }
 }

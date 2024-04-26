@@ -1,4 +1,5 @@
-﻿using DorelAppBackend.Models.DbModels;
+﻿using DorelAppBackend.Models;
+using DorelAppBackend.Models.DbModels;
 using DorelAppBackend.Models.Requests;
 using DorelAppBackend.Models.Responses;
 using DorelAppBackend.Services.Interface;
@@ -117,7 +118,7 @@ namespace DorelAppBackend.Services.Implementation
             return maybe;
         }
 
-        public async Task<Maybe<string>> AssignServiciu(string userEmail, int serviciuId, int[] judeteIds,string descriere, Imagine[] imagini, bool ofer)
+        public async Task<Maybe<string>> AssignServiciu(string userEmail, int serviciuId, int[] judeteIds,string descriere, Imagine[] imagini, bool ofer, string phone, string contactEmail)
         {
             var response = new Maybe<string>();
             if(imagini.Length > 10 && descriere.Length > 250)
@@ -140,7 +141,9 @@ namespace DorelAppBackend.Services.Implementation
                             ServiciuIdID = serviciuId,
                             JudetID = judetId,
                             Descriere = descriere,
-                            Ofer = ofer
+                            Ofer = ofer,
+                            Phone = phone,
+                            Email = contactEmail
                         };
                         _dorelDbContext.JunctionServiciuJudete.Add(junction);
                     }
@@ -168,7 +171,7 @@ namespace DorelAppBackend.Services.Implementation
             return response;
         }
 
-        public async Task<Maybe<string>> EditServiciu(string userEmail, int serviciuId, int[] judeteIds, string descriere, Imagine[] imagini, bool ofer)
+        public async Task<Maybe<string>> EditServiciu(string userEmail, int serviciuId, int[] newJudeteIds, string descriere, Imagine[] imagini, bool ofer, string phone, string contactEmail)
         {
             var response = new Maybe<string>();
             response.SetSuccess("Ok");
@@ -180,28 +183,29 @@ namespace DorelAppBackend.Services.Implementation
             var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
             if (user != null)
             {
-                var junctionExists = _dorelDbContext.JunctionServiciuJudete.Any(e => e.UserID == user.UserID && e.ServiciuIdID == serviciuId);
-                if (junctionExists)
+                var existingJunctions = await _dorelDbContext.JunctionServiciuJudete.Where(e => e.UserID == user.UserID && e.ServiciuIdID == serviciuId && e.Ofer == ofer).ToListAsync();
+                if (existingJunctions.Count() > 0)
                 {
-                    foreach (var judetId in judeteIds)
+                    decimal rating = 0;
+                    foreach (var junction in existingJunctions)
                     {
-                        var junction = new JunctionServiciuJudete
+                        rating = junction.Rating.HasValue ? junction.Rating.Value : 0;
+                        _dorelDbContext.JunctionServiciuJudete.Remove(junction);
+                    }
+                    foreach(var judetId in newJudeteIds)
+                    {
+                        var junction = new JunctionServiciuJudete()
                         {
-                            UserID = user.UserID,
-                            ServiciuIdID = serviciuId,
-                            JudetID = judetId,
                             Descriere = descriere,
-                            Ofer = ofer
+                            ServiciuIdID = serviciuId,
+                            UserID = user.UserID,
+                            JudetID = judetId,
+                            Rating = rating,
+                            Ofer = ofer,
+                            Phone = phone,
+                            Email = contactEmail
                         };
-                        var judetEntryExists = _dorelDbContext.JunctionServiciuJudete.Any(e => e.JudetID == judetId && e.UserID == user.UserID && e.ServiciuIdID == serviciuId);
-                        if (judetEntryExists)
-                        {
-                            _dorelDbContext.JunctionServiciuJudete.Update(junction);
-                        }
-                        else
-                        {
-                            _dorelDbContext.JunctionServiciuJudete.Add(junction);
-                        }
+                        await _dorelDbContext.AddAsync(junction);
                     }
                 }
                 else
@@ -393,7 +397,7 @@ namespace DorelAppBackend.Services.Implementation
                     var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere, Ofer = ofer,
                         ServiciuName = serviciu.Name, JudetName = judet.Name ,StarsAverage = junction.Rating != null ? (decimal)junction.Rating : 5,
                         ImagineCover = imagineCover, UserId = junction.UserID, UserEmail = userOfServiciu.Email, ServiciuId = junction.ServiciuIdID,
-                        JudetId = junction.JudetID, NumberOfReviews = numberOfReviews };
+                        JudetId = junction.JudetID, NumberOfReviews = numberOfReviews, Phone = junction.Phone, Email = junction.Email };
                     listSearchResults.Add(searchResult);
                 }
             }
@@ -449,16 +453,22 @@ namespace DorelAppBackend.Services.Implementation
             return maybe;
         }
 
-        public Maybe<string> GetDescriereForServiciu(int serviciuId, string userEmail)
+        public Maybe<DescriereAndContact> GetDescriereAndContactForServiciu(int serviciuId, string userEmail)
         {
-            var maybe = new Maybe<string>();
+            var maybe = new Maybe<DescriereAndContact>();
             var user = _dorelDbContext.Users.Where(u => u.Email == userEmail).FirstOrDefault();
             if (user != null)
             {
                 var result = _dorelDbContext.JunctionServiciuJudete.FirstOrDefault(x => x.ServiciuIdID == serviciuId && x.UserID == user.UserID);
                 if(result != null)
                 {
-                    maybe.SetSuccess(result.Descriere);
+                    var data = new DescriereAndContact()
+                    {
+                        Descriere = result.Descriere,
+                        Phone = result.Phone,
+                        Email = result.Email
+                    };
+                    maybe.SetSuccess(data);
                     return maybe;
                 }
 

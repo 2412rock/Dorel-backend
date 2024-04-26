@@ -54,10 +54,10 @@ namespace DorelAppBackend.Controllers
 
         [AuthorizationFilter]
         [HttpGet]
-        [Route("api/getDescriereForServiciu")]
-        public IActionResult GetDescriereForServiciu([FromQuery] int serviciuId)
+        [Route("api/getDescriereAndContactForServiciu")]
+        public IActionResult GetDescriereAndContactForServiciu([FromQuery] int serviciuId)
         {
-            var result = _dataService.GetDescriereForServiciu(serviciuId, (string)HttpContext.Items["Email"]);
+            var result = _dataService.GetDescriereAndContactForServiciu(serviciuId, (string)HttpContext.Items["Email"]);
             return Ok(result);
         }
 
@@ -116,7 +116,7 @@ namespace DorelAppBackend.Controllers
         [Route("api/assignUserServiciiAndJudet")]
         public async Task<IActionResult> AssignUserServicii(AssignRequest request)
         {
-            var result = await _dataService.AssignServiciu((string)HttpContext.Items["Email"], request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini, request.Ofer);
+            var result = await _dataService.AssignServiciu((string)HttpContext.Items["Email"], request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini, request.Ofer, request.Phone, request.Email);
             return Ok(result);
         }
 
@@ -125,7 +125,7 @@ namespace DorelAppBackend.Controllers
         [Route("api/editUserServiciu")]
         public async Task<IActionResult> EditUserServiciu(AssignRequest request)
         {
-            var result = await _dataService.EditServiciu((string)HttpContext.Items["Email"], request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini, request.Ofer);
+            var result = await _dataService.EditServiciu((string)HttpContext.Items["Email"], request.ServiciuId, request.JudeteIds, request.Descriere, request.Imagini, request.Ofer, request.Phone, request.Email);
             return Ok(result);
         }
 

@@ -1,4 +1,5 @@
-﻿using DorelAppBackend.Models.DbModels;
+﻿using DorelAppBackend.Models;
+using DorelAppBackend.Models.DbModels;
 using DorelAppBackend.Models.Requests;
 using DorelAppBackend.Models.Responses;
 
@@ -11,15 +12,15 @@ namespace DorelAppBackend.Services.Interface
 
         public Task<List<JunctionServiciuJudete>> GetAllJunctions();
         public Maybe<DBServiciuModel[]> GetServiciiForUser(string email, bool ofer);
-        public Task<Maybe<string>> AssignServiciu(string userEmail, int serviciuId, int[] judeteIds, string descriere, Imagine[] imagini, bool ofer);
+        public Task<Maybe<string>> AssignServiciu(string userEmail, int serviciuId, int[] judeteIds, string descriere, Imagine[] imagini, bool ofer, string phone, string contactEmail);
 
         public Maybe<List<DBJudetModel>> GetJudeteForServiciu(int serviciuId, string userEmail);
 
         public Task<Maybe<List<Imagine>>> GetImaginiServiciuUser(int serviciuId, string userEmail, bool ofer);
 
-        public Maybe<string> GetDescriereForServiciu(int serviciuId, string userEmail);
+        public Maybe<DescriereAndContact> GetDescriereAndContactForServiciu(int serviciuId, string userEmail);
 
-        public Task<Maybe<string>> EditServiciu(string userEmail, int serviciuId, int[] judeteIds, string descriere, Imagine[] imagini, bool ofer);
+        public Task<Maybe<string>> EditServiciu(string userEmail, int serviciuId, int[] judeteIds, string descriere, Imagine[] imagini, bool ofer, string phone, string contactEmail);
 
         public Task<Maybe<string>> DeleteUserServiciu(string userEmail, int serviciuId, bool ofer);
 
