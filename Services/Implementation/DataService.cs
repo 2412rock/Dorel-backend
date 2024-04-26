@@ -109,7 +109,8 @@ namespace DorelAppBackend.Services.Implementation
                 if (serviciu != null && userOfServiciu != null && judet != null)
                 {
                     var imagineCover = await _blobStorageService.DownloadImage(_blobStorageService.GetFileName(userOfServiciu.UserID, serviciu.ID, ofer,0));
-                    var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, JudetName = judet.Name , StarsAverage = 5, ImagineCover = imagineCover, UserId = junction.UserID, ServiciuId = junction.ServiciuIdID, JudetId = junction.JudetID, Ofer = ofer };
+
+                    var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere, ServiciuName = serviciu.Name, JudetName = judet.Name , StarsAverage = junction.Rating != null ? (decimal)junction.Rating : 0, ImagineCover = imagineCover, UserId = junction.UserID, ServiciuId = junction.ServiciuIdID, JudetId = junction.JudetID, Ofer = ofer };
                     listSearchResults.Add(searchResult);
                 }
             }
@@ -395,7 +396,7 @@ namespace DorelAppBackend.Services.Implementation
                     var numberOfReviews = reviews.Count();
                     var imagineCover = await _blobStorageService.DownloadImage(_blobStorageService.GetFileName(userOfServiciu.UserID, serviciu.ID, ofer,0));
                     var searchResult = new SearchResultResponse() { UserName = userOfServiciu.Name, Descriere = junction.Descriere, Ofer = ofer,
-                        ServiciuName = serviciu.Name, JudetName = judet.Name ,StarsAverage = junction.Rating != null ? (decimal)junction.Rating : 5,
+                        ServiciuName = serviciu.Name, JudetName = judet.Name ,StarsAverage = junction.Rating != null ? (decimal)junction.Rating : 0,
                         ImagineCover = imagineCover, UserId = junction.UserID, UserEmail = userOfServiciu.Email, ServiciuId = junction.ServiciuIdID,
                         JudetId = junction.JudetID, NumberOfReviews = numberOfReviews, Phone = junction.Phone, Email = junction.Email };
                     listSearchResults.Add(searchResult);
