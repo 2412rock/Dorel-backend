@@ -21,15 +21,6 @@ namespace DorelAppBackend.Controllers
         {
            return  await _dbContext.JunctionServiciuJudete.ToArrayAsync();
         }
-
-        [HttpGet]
-        [Route("api/getAllUsers")]
-        [AuthorizationFilter(Role = "admin")]
-        public async Task<DBUserLoginInfoModel[]> GetAllUsers()
-        {
-            return await _dbContext.Users.ToArrayAsync();
-        }
-
        
     }
 }
