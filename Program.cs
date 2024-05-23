@@ -112,12 +112,12 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
 
-app.UseCors("AllowLocalHost");
-app.MapHub<ChatHub>("/chatHub").RequireCors("AllowLocalHost");
+/*app.UseCors("AllowLocalHost");
+app.MapHub<ChatHub>("/chatHub").RequireCors("AllowLocalHost");*/
 
 
-/*app.UseCors("AllowDorelOrigin");
-app.MapHub<ChatHub>("/chatHub").RequireCors("AllowDorelOrigin");*/
+app.UseCors("AllowDorelOrigin");
+app.MapHub<ChatHub>("/chatHub").RequireCors("AllowDorelOrigin");
 
 if (app.Environment.IsDevelopment())
 {
