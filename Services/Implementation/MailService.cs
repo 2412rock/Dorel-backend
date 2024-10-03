@@ -9,13 +9,13 @@ namespace DorelAppBackend.Services.Implementation
         public void SendMailToUser(string verificationCode, string recipientEmail)
         {
             // Sender's Gmail credentials
-            string senderEmail = "dorelapp1@gmail.com";
+            string senderEmail = "overflowthegame@gmail.com";
             string senderPassword = Environment.GetEnvironmentVariable("EMAIL_PASSWD");
 
             // Create a new MailMessage
             MailMessage mail = new MailMessage(senderEmail, recipientEmail)
             {
-                Subject = "Verification email",
+                Subject = "Verification email for DorelApp",
                 Body = $"This is your verification code {verificationCode}"
             };
 
