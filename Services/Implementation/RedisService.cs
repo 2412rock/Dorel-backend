@@ -10,25 +10,9 @@ namespace DorelAppBackend.Services.Implementation
 
         public RedisService()
         {
-            string hostIp = "";
-            try
-            {
-                IPAddress[] addresses = Dns.GetHostAddresses("host.docker.internal");
-                if (addresses.Length > 0)
-                {
-                    // we are running in docker
-                    hostIp = addresses[0].ToString();
-                }
-                else
-                {
-                    // running locally
-                    hostIp = Environment.GetEnvironmentVariable("HOST_IP");
-                }
-            }
-            catch
-            {
-                hostIp = "10.132.0.2";
-            }
+
+            string hostIp = "192.168.1.159";
+            
 
             var redisPassword = Environment.GetEnvironmentVariable("REDIS_PASSWORD");
 

@@ -13,20 +13,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseKestrel(options =>
 {
     options.Listen(IPAddress.Any, 4500);
-    options.Listen(IPAddress.Any, 4200, listenOptions =>
-    {
-        try
-        {
-            // docker
-            listenOptions.UseHttps("/app/backendcertificate.pfx"); //Environment.GetEnvironmentVariable("PFX_PASS")
-        }
-        catch
-        {
-            // local
-            listenOptions.UseHttps("C:/Users/Adi/Desktop/certs/backendcertificate.pfx");
-        }
-
-    });
 });
 
 
@@ -81,31 +67,14 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false);
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 // Add DbContext
-string hostIp = "";
+string hostIp = "192.168.1.159";
 
-try
-{
-    IPAddress[] addresses = Dns.GetHostAddresses("host.docker.internal");
-    if (addresses.Length > 0)
-    {
-        // we are running in docker
-        hostIp = addresses[0].ToString();
-    }
-}
-catch
-{
-
-    if (String.IsNullOrEmpty(hostIp))
-    {
-        hostIp = "10.132.0.2";
-    }
-}
 
 
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
 
 builder.Services.AddDbContext<DorelDbContext>(options =>
-    options.UseSqlServer($"Server={hostIp},1433;Database=DorelDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
+    options.UseSqlServer($"Server={hostIp},1501;Database=DorelDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
 
 
 var app = builder.Build();
@@ -116,9 +85,9 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.MapHub<ChatHub>("/chatHub").RequireCors("AllowLocalHost");*/
 
 
-app.UseCors("AllowDorelOrigin");
-app.MapHub<ChatHub>("/chatHub").RequireCors("AllowDorelOrigin");
 
+app.MapHub<ChatHub>("/chatHub").RequireCors("AllowDorelOrigin");
+app.UseCors("AllowDorelOrigin");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

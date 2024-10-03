@@ -20,7 +20,7 @@ COPY backendcertificate.pfx /app/backendcertificate.pfx
 COPY --from=build /app/out ./
 
 # Expose port 80 for the application
-EXPOSE 4200
+EXPOSE 4500
 
 # Define the command to run the application when the container starts
 ENTRYPOINT ["dotnet", "DorelAppBackend.dll"]
